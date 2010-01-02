@@ -1,0 +1,153 @@
+% posix-mq.rb(1) posix-mq.rb User Manual
+% Ruby POSIX MQ hackers <ruby.posix.mq@librelist.com>
+% Jan 1, 2010
+
+# NAME
+
+posix-mq.rb - command-line interface for POSIX message queues
+
+# SYNOPSIS
+
+MQUEUE=/name posix-mq.rb COMMAND [*OPTIONS*] [*ARGUMENTS*]
+
+# DESCRIPTION
+
+A command-line interface for manipulating POSIX message queues.  It is
+useful for testing and debugging applications using POSIX message
+queues.
+
+# COMMANDS
+
+*create* - create a new message queue
+
+*attr* - output attributes of the message queue
+
+*send* - insert a message into the queue from stdin or the command-line
+
+*receive* - take a message from the queue and outputs it to stdout
+
+*wait* - sleep until a message is available in the queue
+
+*unlink* - unlink the message queue
+
+# CREATE USAGE
+
+The *create* command accepts the following options:
+
+-x, \--exclusive
+:   This causes queue creation to fail if the queue exists.
+
+-m, \--mode MODE
+:   The MODE to open the file under, the actual mode of the queue
+    will be AND-ed with the current umask (like open(2)).
+
+-c, \--maxmsg COUNT
+:   The maximum messages in the queue.  The default and limit of this
+    value is system-dependent.  This must be specified if \--msgsize is
+    also specified.
+
+-s, \--msgsize BYTES
+:   The maximum size of an individual message. The default and limit of
+    this value is system-dependent.  This must be specified if \--maxmsg
+    is also specified.
+
+# ATTR USAGE
+
+The *attr* command takes no special options nor command-line arguments.
+The output format of this command is suitable for "eval" in
+shell scripts.  Sample output is below:
+
+        flags=0
+        maxmsg=10
+        msgsize=8192
+        curmsgs=3
+
+See mq_getattr(3) for information on the meaning of the fields.
+
+# SEND USAGE
+
+The *send* command will read a message from standard input if no
+command-line arguments are given.  If command-line arguments are
+given, each argument is considered its own message and will be
+inserted into the queue separately.
+
+The following command-line arguments are accepted:
+
+-n, \--nonblock
+:   Exit immediately with error if the message queue is full.
+    Normally posix-mq.rb(1) will block until the queue is writable or
+    interrupted.  This may not be used in conjunction with \--timeout .
+-t, \--timeout SECONDS
+:   Timeout and exit with error after SECONDS if the message queue is full.
+    This may not be used in conjunction with \--nonblock.
+-p, \--priority PRIORITY
+:   Specify an integer PRIORITY, this value should be 0 through 31
+    (inclusive) for portability across POSIX-compliant systems.
+    The default priority is 0.
+
+# RECEIVE USAGE
+
+The *receive* command will output message to standard output.  It will
+read a message from standard input if no command-line arguments are
+given.  If command-line arguments are given, each argument is considered
+its own message and will be inserted into the queue separately.
+
+The following command-line arguments are accepted:
+
+-n, \--nonblock
+:   Exit immediately with error if the message queue is empty.
+    Normally posix-mq.rb(1) will block until the queue is readable or
+    interrupted.  This may not be used in conjunction with \--timeout .
+-t, \--timeout SECONDS
+:   Timeout and exit with error after SECONDS if the message queue is empty.
+    This may not be used in conjunction with \--nonblock.
+-p, \--priority
+:   Output the priority of the received message to stderr in the following
+    format:
+
+        priority=3
+
+    The priority is an unsigned integer.
+
+# WAIT USAGE
+
+The *wait* command will cause posix-mq.rb(1) to sleep until a message is
+available in the queue.  Only one process may wait on an empty queue,
+posix-mq.rb(1) will exit with an error if there is another waiting process.
+
+It takes no arguments and accepts the following options:
+
+-t, \--timeout SECONDS
+:   Timeout and exit with error after SECONDS if the message queue is empty.
+
+# UNLINK USAGE
+
+The *unlink* command prevents further opening and use of the current
+queue.  Existing processes with the queue open may continue to operate
+on the queue indefinitely.  If a new queue is created with the same
+name, the created queue is a different queue from the unlinked queue.
+See mq_unlink(3) for more information.
+
+# GENERAL OPTIONS
+-q
+:   Do not show warning/error messages, suitable for scripting.
+
+\-h, \--help
+:   Show summary usage
+
+# ENVIRONMENT
+
+All commands rely on the MQUEUE environment variable.  The value
+of MQUEUE should always be prefixed with a slash ("/") for
+portability.
+
+# DIAGNOSTICS
+
+Exit status is normally 0.  Exit status is 2 if a timeout occurs, 1 for
+all other errors.
+
+# SEE ALSO
+
+* [mq_overview(7)][1]
+
+[1]: http://kernel.org/doc/man-pages/online/pages/man7/mq_overview.7.html

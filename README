@@ -1,0 +1,70 @@
+= posix_mq - POSIX Message Queues for Ruby
+
+POSIX message queues allow local processes to exchange data in the form
+of messages.  This API is distinct from that provided by System V
+message queues, but provides similar functionality.
+
+POSIX message queues may be implemented in the kernel for fast,
+low-latency communication between processes on the same machine.
+POSIX message queues are not intended to replace userspace,
+network-aware message queue implementations.
+
+== Features
+
+* Supports message notifications via signals.
+
+* Supports portable non-blocking operation.  Under Linux 2.6.6+ only,
+  POSIX_MQ objects may even be used with event notification mechanisms
+  such as IO.select.
+
+* Optional timeouts may be applied to send and receive operations.
+
+* Thread-safe under Ruby 1.9, releases GVL before blocking operations.
+
+* Documented library API
+
+* Includes a generic "posix-mq.rb" command-line tool with manpage.
+
+== Install
+
+Operating system support (or library emulation) for POSIX message queues
+is required.  Most modern GNU/Linux distributions support this
+out-of-the-box.
+
+If you're using a packaged Ruby distribution, make sure you have a C
+compiler and the matching Ruby development libraries and headers.
+
+If you plan on using the command-line client, a tarball installation
+starts up faster and is recommended.  Just grab the tarball from:
+
+http://bogomips.org/ruby_posix_mq/files/
+Unpack it, and run "ruby setup.rb"
+
+Otherwise, via RubyGems: gem install posix_mq
+
+== Development
+
+You can get the latest source via git from the following locations:
+
+  git://git.bogomips.org/ruby_posix_mq.git
+  git://repo.or.cz/ruby_posix_mq.git (mirror)
+
+You may browse the code from the web and download the latest snapshot
+tarballs here:
+
+* http://git.bogomips.org/cgit/ruby_posix_mq.git (cgit)
+* http://repo.or.cz/w/ruby_posix_mq.git (gitweb)
+
+Inline patches (from "git format-patch") to the mailing list are
+preferred because they allow code review and comments in the reply to
+the patch.
+
+We will adhere to mostly the same conventions for patch submissions as
+git itself.  See the Documentation/SubmittingPatches document
+distributed with git on on patch submission guidelines to follow.  Just
+don't email the git mailing list or maintainer with posix_mq patches.
+
+== Contact
+
+All feedback (bug reports, user/development discussion, patches, pull
+requests) go to the mailing list: mailto:ruby.posix.mq@librelist.com
