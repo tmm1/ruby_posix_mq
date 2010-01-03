@@ -497,7 +497,7 @@ static void get_msgsize(struct posix_mq *mq)
 {
 	struct mq_attr attr;
 
-	if (mq_getattr(mq->des, &attr) == MQD_INVALID)
+	if (mq_getattr(mq->des, &attr) < 0)
 		rb_sys_fail("mq_getattr");
 
 	mq->msgsize = attr.mq_msgsize;
@@ -569,7 +569,7 @@ static VALUE getattr(VALUE self)
 	VALUE astruct;
 	VALUE *ptr;
 
-	if (mq_getattr(mq->des, &attr) == MQD_INVALID)
+	if (mq_getattr(mq->des, &attr) < 0)
 		rb_sys_fail("mq_getattr");
 
 	astruct = rb_struct_alloc_noinit(cAttr);
@@ -599,7 +599,7 @@ static VALUE setattr(VALUE self, VALUE astruct)
 
 	attr_from_struct(&newattr, astruct, 0);
 
-	if (mq_setattr(mq->des, &newattr, NULL) == MQD_INVALID)
+	if (mq_setattr(mq->des, &newattr, NULL) < 0)
 		rb_sys_fail("mq_setattr");
 
 	return astruct;
@@ -619,7 +619,7 @@ static VALUE _close(VALUE self)
 {
 	struct posix_mq *mq = get(self, 1);
 
-	if (mq_close(mq->des) == MQD_INVALID)
+	if (mq_close(mq->des) < 0)
 		rb_sys_fail("mq_close");
 
 	mq->des = MQD_INVALID;
@@ -730,7 +730,7 @@ static VALUE setnotify(VALUE self, VALUE arg)
 		rb_raise(rb_eArgError, "must be a signal or nil");
 	}
 
-	if (mq_notify(mq->des, notification) == MQD_INVALID)
+	if (mq_notify(mq->des, notification) < 0)
 		rb_sys_fail("mq_notify");
 
 	return rv;
@@ -747,7 +747,7 @@ static VALUE getnonblock(VALUE self)
 	struct mq_attr attr;
 	struct posix_mq *mq = get(self, 1);
 
-	if (mq_getattr(mq->des, &attr) == MQD_INVALID)
+	if (mq_getattr(mq->des, &attr) < 0)
 		rb_sys_fail("mq_getattr");
 
 	mq->msgsize = attr.mq_msgsize; /* optimization */
@@ -776,7 +776,7 @@ static VALUE setnonblock(VALUE self, VALUE nb)
 	else
 		rb_raise(rb_eArgError, "must be true or false");
 
-	if (mq_setattr(mq->des, &newattr, &oldattr) == MQD_INVALID)
+	if (mq_setattr(mq->des, &newattr, &oldattr) < 0)
 		rb_sys_fail("mq_setattr");
 
 	mq->msgsize = oldattr.mq_msgsize; /* optimization */
