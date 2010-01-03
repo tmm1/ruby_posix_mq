@@ -146,8 +146,15 @@ portability.
 Exit status is normally 0.  Exit status is 2 if a timeout occurs, 1 for
 all other errors.
 
+Under FreeBSD, the mq_* system calls are not available unless you load
+the mqueuefs(5) kernel module:
+
+        kldload mqueuefs
+
 # SEE ALSO
 
 * [mq_overview(7)][1]
+* [mqueuefs(5)][2]
 
 [1]: http://kernel.org/doc/man-pages/online/pages/man7/mq_overview.7.html
+[2]: http://freebsd.org/cgi/man.cgi?query=mqueuefs

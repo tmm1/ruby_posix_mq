@@ -42,6 +42,42 @@ Unpack it, and run "ruby setup.rb"
 
 Otherwise, via RubyGems: gem install posix_mq
 
+== Usage
+
+The Linux mq_overview(7)
+{manpage}[http://kernel.org/doc/man-pages/online/pages/man7/mq_overview.7.html]
+provides a good overview of programming with POSIX message queues.
+
+Under FreeBSD, you must load the
+{mqueuefs(5)}[http://freebsd.org/cgi/man.cgi?query=mqueuefs]
+kernel module before attempting to use POSIX message queues:
+
+    kldload mqueuefs
+
+Our API matches the C api closely, see the RDoc for full API
+documentation.  Here is an example of a process communicating
+with itself.  In practice, processes that send will be different
+from processes that receive.
+
+    require 'posix_mq'
+    mq = POSIX_MQ.new("/foo", :rw)
+
+    # hello world
+    mq << "hello world"
+    puts mq.receive.first # => should print "hello world"
+
+    # non-blocking operation
+    mq.nonblock = true
+    begin
+      mq.receive
+    rescue Errno::EAGAIN
+    end
+
+    trap(:USR1) { puts mq.receive.first }
+    mq.notify = :USR1
+    mq.send "fire USR1 handler"
+    # "fire USR1 handler" should be printed now
+
 == Development
 
 You can get the latest source via git from the following locations:
