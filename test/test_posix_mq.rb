@@ -136,9 +136,25 @@ class Test_POSIX_MQ < Test::Unit::TestCase
     assert_nil(@mq.notify = nil)
     assert_nothing_raised { @mq.send("hello", 0) }
     assert_nil IO.select([rd], nil, nil, 0.1)
-    assert_raises(Errno::EBUSY) { @mq.notify = :USR1 }
     ensure
       trap(:USR1, orig)
+  end
+
+  def test_notify_none
+    @mq = POSIX_MQ.new @path, IO::CREAT|IO::RDWR, 0666
+    assert_nothing_raised { @mq.notify = false }
+    pid = fork do
+      begin
+        @mq.notify = :USR1
+      rescue Errno::EBUSY
+        exit 0
+      rescue => e
+        p e
+      end
+      exit! 1
+    end
+    _, status = Process.waitpid2(pid)
+    assert status.success?, status.inspect
   end
 
   def test_setattr

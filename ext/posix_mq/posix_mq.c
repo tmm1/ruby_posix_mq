@@ -680,19 +680,32 @@ static int lookup_sig(VALUE sig)
  * to the current process when message is received.
  * If +signal+ is +nil+, it will unregister and disable the notification
  * request to allow other processes to register a request.
+ * If +signal+ is +false+, it will register a no-op notification request
+ * which will prevent other processes from registering a notification.
  * Only one process may have a notification request for a queue
  * at a time, Errno::EBUSY will be raised if there is already
  * a notification request registration for the queue.
+ *
+ * For readers of the mq_notify(3) manpage, passing +false+
+ * is equivalent to SIGEV_NONE, and passing +nil+ is equivalent
+ * of passing a NULL notification pointer to mq_notify(3).
  */
 static VALUE setnotify(VALUE self, VALUE arg)
 {
 	struct posix_mq *mq = get(self, 1);
 	struct sigevent not;
+	struct sigevent * notification = &not;
 	VALUE rv = arg;
 
 	not.sigev_notify = SIGEV_SIGNAL;
 
 	switch (TYPE(arg)) {
+	case T_FALSE:
+		not.sigev_notify = SIGEV_NONE;
+		break;
+	case T_NIL:
+		notification = NULL;
+		break;
 	case T_FIXNUM:
 		not.sigev_signo = NUM2INT(arg);
 		break;
@@ -701,15 +714,12 @@ static VALUE setnotify(VALUE self, VALUE arg)
 		not.sigev_signo = lookup_sig(arg);
 		rv = INT2NUM(not.sigev_signo);
 		break;
-	case T_NIL:
-		not.sigev_notify = SIGEV_NONE;
-		break;
 	default:
 		/* maybe support Proc+thread via sigev_notify_function.. */
 		rb_raise(rb_eArgError, "must be a signal or nil");
 	}
 
-	if (mq_notify(mq->des, &not) == MQD_INVALID)
+	if (mq_notify(mq->des, notification) == MQD_INVALID)
 		rb_sys_fail("mq_notify");
 
 	return rv;
