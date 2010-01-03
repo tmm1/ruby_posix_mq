@@ -13,9 +13,9 @@ network-aware message queue implementations.
 
 * Supports message notifications via signals.
 
-* Supports portable non-blocking operation.  Under Linux 2.6.6+ only,
-  POSIX_MQ objects may even be used with event notification mechanisms
-  such as IO.select.
+* Supports portable non-blocking operation.  Under Linux 2.6.6+ and
+  FreeBSD 7.2+, POSIX_MQ objects may even be used with event
+  notification mechanisms such as IO.select.
 
 * Optional timeouts may be applied to send and receive operations.
 

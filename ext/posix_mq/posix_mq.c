@@ -16,21 +16,25 @@
 #include <unistd.h>
 
 #if defined(__linux__)
-#  define MQD_IS_FD 1
-#  define MQ_IO_MARK(mq) rb_gc_mark((mq)->io)
-#  define MQ_IO_SET(mq,val) do { (mq)->io = (val); } while (0)
+#  define MQD_TO_FD(mqd) (int)(mqd)
+#elif defined(HAVE___MQ_OSHANDLE) /* FreeBSD */
+#  define MQD_TO_FD(mqd) __mq_oshandle(mqd)
 #else
 #  warning mqd_t is not select()-able on your OS
-#  define MQD_IS_FD 0
 #  define MQ_IO_MARK(mq) ((void)(0))
 #  define MQ_IO_SET(mq,val) ((void)(0))
-#endif /* non-Linux */
+#endif
+
+#ifdef MQD_TO_FD
+#  define MQ_IO_MARK(mq) rb_gc_mark((mq)->io)
+#  define MQ_IO_SET(mq,val) do { (mq)->io = (val); } while (0)
+#endif
 
 struct posix_mq {
 	mqd_t des;
 	long msgsize;
 	VALUE name;
-#if MQD_IS_FD
+#ifdef MQD_TO_FD
 	VALUE io;
 #endif
 };
@@ -469,7 +473,7 @@ static VALUE send0(VALUE self, VALUE buffer)
 	return self;
 }
 
-#if MQD_IS_FD
+#ifdef MQD_TO_FD
 /*
  * call-seq:
  *	mq.to_io	=> IO
@@ -480,9 +484,10 @@ static VALUE send0(VALUE self, VALUE buffer)
 static VALUE to_io(VALUE self)
 {
 	struct posix_mq *mq = get(self, 1);
+	int fd = MQD_TO_FD(mq->des);
 
 	if (NIL_P(mq->io))
-		mq->io = rb_funcall(rb_cIO, id_new, 1, INT2NUM(mq->des));
+		mq->io = rb_funcall(rb_cIO, id_new, 1, INT2NUM(fd));
 
 	return mq->io;
 }
@@ -818,7 +823,7 @@ void Init_posix_mq_ext(void)
 	rb_define_method(cPOSIX_MQ, "notify=", setnotify, 1);
 	rb_define_method(cPOSIX_MQ, "nonblock=", setnonblock, 1);
 	rb_define_method(cPOSIX_MQ, "nonblock?", getnonblock, 0);
-#if MQD_IS_FD
+#ifdef MQD_TO_FD
 	rb_define_method(cPOSIX_MQ, "to_io", to_io, 0);
 #endif
 
