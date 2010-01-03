@@ -1,4 +1,10 @@
 #define _XOPEN_SOURCE 600
+#ifdef HAVE_SYS_SELECT_H
+#  include <sys/select.h>
+#endif
+#ifdef HAVE_SIGNAL_H
+#  include <signal.h>
+#endif
 #include <ruby.h>
 
 #include <time.h>
