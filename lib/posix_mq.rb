@@ -26,7 +26,38 @@ class POSIX_MQ
         mq.close unless mq.closed?
       end
     end
+  end
 
+  # Executes the given block upon reception of the next message in an
+  # empty queue.  If the message queue is not empty, then this block
+  # will only be fired after the queue is emptied and repopulated with
+  # one message.
+  #
+  # This block will only be executed upon the arrival of the
+  # first message and must be reset/reenabled for subsequent
+  # notifications.  This block will execute in a separate Ruby
+  # Thread (and thus will safely have the GVL by default).
+  def notify(&block)
+    block.arity == 1 or
+      raise ArgumentError, "arity of notify block must be 1"
+    r, w = IO.pipe
+    thr = Thread.new(r, w, self) do |r, w, mq|
+      begin
+        begin
+          r.read(1) or raise Errno::EINTR
+        rescue Errno::EINTR, Errno::EAGAIN
+          retry
+        end
+        block.call(mq)
+      ensure
+        mq.notify_thread = nil
+        r.close rescue nil
+        w.close rescue nil
+      end
+    end
+    self.notify = w
+    self.notify_thread = thr
+    nil
   end
 
 end

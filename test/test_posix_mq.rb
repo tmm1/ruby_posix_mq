@@ -1,6 +1,7 @@
 # -*- encoding: binary -*-
 require 'test/unit'
 require 'posix_mq'
+require 'thread'
 require 'fcntl'
 $stderr.sync = $stdout.sync = true
 
@@ -238,4 +239,28 @@ class Test_POSIX_MQ < Test::Unit::TestCase
     assert POSIX_MQ::OPEN_MAX.kind_of?(Integer)
   end
 
+  def test_notify_block_replace
+    q = Queue.new
+    @mq = POSIX_MQ.new(@path, :rw)
+    assert_nothing_raised { @mq.notify { |mq| q << mq } }
+    @mq << "hi"
+    assert_equal POSIX_MQ, q.pop.class
+    assert_equal "hi", @mq.receive.first
+    assert_nothing_raised { @mq.notify { |mq| q << "hi" } }
+    @mq << "bye"
+    assert_equal "hi", q.pop
+  end
+
+  def test_notify_thread
+    q = Queue.new
+    @mq = POSIX_MQ.new(@path, :rw)
+    @mq.notify_thread = thr = Thread.new { sleep }
+    assert thr.alive?
+    @mq.notify { |mq| q << Thread.current }
+    @mq << "."
+    x = q.pop
+    assert x.instance_of?(Thread)
+    assert Thread.current != x
+    assert ! thr.alive?
+  end
 end

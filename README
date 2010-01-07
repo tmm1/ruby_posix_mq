@@ -11,7 +11,8 @@ network-aware message queue implementations.
 
 == Features
 
-* Supports message notifications via signals.
+* Supports message notifications via signals and block execution
+  in a separate thread.
 
 * Supports portable non-blocking operation.  Under Linux 2.6.6+ and
   FreeBSD 7.2+, POSIX_MQ objects may even be used with event
@@ -19,7 +20,8 @@ network-aware message queue implementations.
 
 * Optional timeouts may be applied to send and receive operations.
 
-* Thread-safe under Ruby 1.9, releases GVL before blocking operations.
+* Thread-safe blocking operations under Ruby 1.9, releases GVL
+  before blocking operations.
 
 * Documented library API
 
