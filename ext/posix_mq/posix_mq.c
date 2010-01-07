@@ -509,6 +509,8 @@ static void get_msgsize(struct posix_mq *mq)
 	mq->msgsize = attr.mq_msgsize;
 }
 
+static VALUE _receive(int wantarray, int argc, VALUE *argv, VALUE self);
+
 /*
  * call-seq:
  *	mq.receive([buffer, [timeout]])		=> [ message, priority ]
@@ -526,6 +528,31 @@ static void get_msgsize(struct posix_mq *mq)
  * in the queue.
  */
 static VALUE receive(int argc, VALUE *argv, VALUE self)
+{
+	return _receive(1, argc, argv, self);
+}
+
+/*
+ * call-seq:
+ *	mq.shift([buffer, [timeout]])		=> message
+ *
+ * Takes the highest priority message off the queue and returns
+ * the message as a String.
+ *
+ * If the optional +buffer+ is present, then it must be a String
+ * which will receive the data.
+ *
+ * If the optional +timeout+ is present, then it may be a Float
+ * or Integer specifying the timeout in seconds.  Errno::ETIMEDOUT
+ * will be raised if +timeout+ has elapsed and there are no messages
+ * in the queue.
+ */
+static VALUE shift(int argc, VALUE *argv, VALUE self)
+{
+	return _receive(0, argc, argv, self);
+}
+
+static VALUE _receive(int wantarray, int argc, VALUE *argv, VALUE self)
 {
 	struct posix_mq *mq = get(self, 1);
 	struct rw_args x;
@@ -557,7 +584,9 @@ static VALUE receive(int argc, VALUE *argv, VALUE self)
 
 	rb_str_set_len(buffer, r);
 
-	return rb_ary_new3(2, buffer, UINT2NUM(x.msg_prio));
+	if (wantarray)
+		return rb_ary_new3(2, buffer, UINT2NUM(x.msg_prio));
+	return buffer;
 }
 
 /*
@@ -889,6 +918,7 @@ void Init_posix_mq_ext(void)
 	rb_define_method(cPOSIX_MQ, "send", _send, -1);
 	rb_define_method(cPOSIX_MQ, "<<", send0, 1);
 	rb_define_method(cPOSIX_MQ, "receive", receive, -1);
+	rb_define_method(cPOSIX_MQ, "shift", shift, -1);
 	rb_define_method(cPOSIX_MQ, "attr", getattr, 0);
 	rb_define_method(cPOSIX_MQ, "attr=", setattr, 1);
 	rb_define_method(cPOSIX_MQ, "close", _close, 0);
