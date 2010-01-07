@@ -249,7 +249,7 @@ class Test_POSIX_MQ < Test::Unit::TestCase
     assert_nothing_raised { @mq.notify { |mq| q << "hi" } }
     @mq << "bye"
     assert_equal "hi", q.pop
-  end
+  end if POSIX_MQ.respond_to?(:notify)
 
   def test_notify_thread
     q = Queue.new
@@ -262,5 +262,5 @@ class Test_POSIX_MQ < Test::Unit::TestCase
     assert x.instance_of?(Thread)
     assert Thread.current != x
     assert ! thr.alive?
-  end
+  end if POSIX_MQ.respond_to?(:notify)
 end

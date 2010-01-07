@@ -37,6 +37,12 @@ class POSIX_MQ
   # first message and must be reset/reenabled for subsequent
   # notifications.  This block will execute in a separate Ruby
   # Thread (and thus will safely have the GVL by default).
+  #
+  # This method is only supported on platforms that implement
+  # SIGEV_THREAD functionality in mq_notify(3).  So far we only
+  # know of glibc + Linux supporting this.  Please let us
+  # know if your platform can support this functionality and
+  # are willing to test for us <ruby.posix.mq@librelist.com>
   def notify(&block)
     block.arity == 1 or
       raise ArgumentError, "arity of notify block must be 1"
@@ -58,7 +64,7 @@ class POSIX_MQ
     self.notify = w
     self.notify_thread = thr
     nil
-  end
+  end if RUBY_PLATFORM =~ /linux/
 
 end
 
