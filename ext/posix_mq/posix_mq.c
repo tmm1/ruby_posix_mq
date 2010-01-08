@@ -331,7 +331,7 @@ static VALUE init(int argc, VALUE *argv, VALUE self)
 	switch (TYPE(mode)) {
 	case T_FIXNUM:
 		x.argc = 3;
-		x.mode = NUM2INT(mode);
+		x.mode = NUM2UINT(mode);
 		break;
 	case T_NIL:
 		if (x.oflags & O_CREAT) {
