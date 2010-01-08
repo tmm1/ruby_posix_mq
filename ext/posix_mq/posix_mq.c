@@ -730,22 +730,8 @@ static void setup_notify_io(struct sigevent *not, VALUE io)
 {
 	VALUE fileno = rb_funcall(io, id_fileno, 0, 0);
 	int fd = NUM2INT(fileno);
-	int flags;
 	pthread_attr_t attr;
 	int e;
-
-	/*
-	 * fd going to be written to inside a native thread,
-	 * make it blocking for simplicity
-	 */
-	flags = fcntl(fd, F_GETFL);
-	if (flags < 0) {
-		rb_sys_fail("fcntl F_GETFL");
-	} else if (flags & O_NONBLOCK) {
-		flags = fcntl(fd, F_SETFL, flags & ~O_NONBLOCK);
-		if (flags < 0)
-			rb_sys_fail("fcntl F_SETFL");
-	}
 
 	if ((e = pthread_attr_init(&attr)))
 		goto err;
