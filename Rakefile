@@ -125,7 +125,7 @@ task :raa_update do
   require 'rubygems'
   require 'net/http'
   require 'net/netrc'
-  rc = Net::Netrc.locate('ruby_posix_mq-raa') or abort "~/.netrc not found"
+  rc = Net::Netrc.locate('posix_mq-raa') or abort "~/.netrc not found"
   password = rc.password
 
   s = Gem::Specification.load('posix_mq.gemspec')
@@ -147,7 +147,7 @@ task :raa_update do
     :category_minor => 'System',
     :url => s.homepage,
     :download => 'http://rubyforge.org/frs/?group_id=5626',
-    :license => 'LGPLv3',
+    :license => 'LGPL', # LGPLv3, actually, but RAA is ancient...
     :description_style => 'Plain',
     :description => desc,
     :pass => password,
