@@ -71,7 +71,6 @@ static void rb_18_str_set_len(VALUE str, long len)
 {
 	RSTRING(str)->len = len;
 	RSTRING(str)->ptr[len] = '\0';
-	rb_str_flush(str);
 }
 #    define rb_str_set_len(str,len) rb_18_str_set_len(str,len)
 #  endif /* ! RUBINIUS */
