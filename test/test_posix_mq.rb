@@ -96,6 +96,14 @@ class Test_POSIX_MQ < Test::Unit::TestCase
     assert_equal "hello", @mq.shift
   end
 
+  def test_shift_buf
+    buf = ""
+    @mq = POSIX_MQ.new @path, IO::CREAT|IO::RDWR, 0666
+    @mq << "hello"
+    assert_equal "hello", @mq.shift(buf)
+    assert_equal "hello", buf
+  end
+
   def test_send_receive
     @mq = POSIX_MQ.new @path, IO::CREAT|IO::RDWR, 0666
     assert_nil @mq.send("hello", 0)
