@@ -216,8 +216,8 @@ static void _free(void *ptr)
 
 		mq_close(mq->des);
 		errno = saved_errno;
-		mq->des = MQD_INVALID;
 	}
+	xfree(ptr);
 }
 
 /* automatically called at creation (before initialize) */
