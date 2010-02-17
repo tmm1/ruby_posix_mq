@@ -66,6 +66,18 @@ class POSIX_MQ
     nil
   end if RUBY_PLATFORM =~ /linux/
 
+  # There's no point in ever duping a POSIX_MQ object.
+  # All send/receive operations are atomic and only one
+  # native thread may be notified at a time
+  def dup
+    self
+  end
+
+  # There's no point in ever cloning a POSIX_MQ object.
+  # All send/receive operations are atomic and only one
+  # native thread may be notified at a time
+  alias clone dup
+
 end
 
 require 'posix_mq_ext'

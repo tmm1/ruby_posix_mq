@@ -27,6 +27,14 @@ class Test_POSIX_MQ < Test::Unit::TestCase
     assert @mq.closed?
   end
 
+  def test_dup_clone
+    @mq = POSIX_MQ.new(@path, :rw)
+    dup = @mq.dup
+    assert_equal @mq.object_id, dup.object_id
+    clone = @mq.clone
+    assert_equal @mq.object_id, clone.object_id
+  end
+
   def test_timed_receive
     interval = 0.01
     @mq = POSIX_MQ.new(@path, :rw)
