@@ -147,7 +147,7 @@ static struct timespec *convert_timeout(struct timespec *dest, VALUE time)
 	return dest;
 }
 
-/* runs without GVL */
+/* (may) run without GVL */
 static VALUE xopen(void *ptr)
 {
 	struct open_args *x = ptr;
@@ -185,14 +185,6 @@ static VALUE xrecv(void *ptr)
 		                              &x->msg_prio, x->timeout);
 
 	return (VALUE)mq_receive(x->des, x->msg_ptr, x->msg_len, &x->msg_prio);
-}
-
-/* runs without GVL, path resolution may be slow */
-static VALUE xunlink(void *ptr)
-{
-	VALUE name = (VALUE)ptr;
-
-	return (VALUE)mq_unlink(RSTRING_PTR(name));
 }
 
 /* called by GC */
@@ -361,7 +353,7 @@ static VALUE init(int argc, VALUE *argv, VALUE self)
 		         RSTRING_PTR(rb_inspect(attr)));
 	}
 
-	mq->des = (mqd_t)rb_thread_blocking_region(xopen, &x, RUBY_UBF_IO, 0);
+	mq->des = (mqd_t)xopen(&x);
 	if (mq->des == MQD_INVALID)
 		rb_sys_fail("mq_open");
 
@@ -382,12 +374,11 @@ static VALUE init(int argc, VALUE *argv, VALUE self)
 static VALUE s_unlink(VALUE self, VALUE name)
 {
 	mqd_t rv;
-	void *ptr = (void *)name;
 
 	if (TYPE(name) != T_STRING)
 		rb_raise(rb_eArgError, "argument must be a string");
 
-	rv = (mqd_t)rb_thread_blocking_region(xunlink, ptr, RUBY_UBF_IO, 0);
+	rv = mq_unlink(RSTRING_PTR(name));
 	if (rv == MQD_INVALID)
 		rb_sys_fail("mq_unlink");
 
@@ -408,11 +399,10 @@ static VALUE _unlink(VALUE self)
 {
 	struct posix_mq *mq = get(self, 0);
 	mqd_t rv;
-	void *ptr = (void *)mq->name;
 
 	assert(TYPE(mq->name) == T_STRING && "mq->name is not a string");
 
-	rv = (mqd_t)rb_thread_blocking_region(xunlink, ptr, RUBY_UBF_IO, 0);
+	rv = mq_unlink(RSTRING_PTR(mq->name));
 	if (rv == MQD_INVALID)
 		rb_sys_fail("mq_unlink");
 
