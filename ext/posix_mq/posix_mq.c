@@ -470,7 +470,12 @@ static VALUE send0(VALUE self, VALUE buffer)
 	x.timeout = NULL;
 	x.msg_prio = 0;
 
-	rv = (mqd_t)rb_thread_blocking_region(xsend, &x, RUBY_UBF_IO, 0);
+	if (mq->attr.mq_flags & O_NONBLOCK)
+		rv = (mqd_t)xsend(&x);
+	else
+		rv = (mqd_t)rb_thread_blocking_region(xsend, &x,
+		                                      RUBY_UBF_IO, 0);
+
 	if (rv == MQD_INVALID)
 		rb_sys_fail("mq_send");
 
