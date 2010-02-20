@@ -35,7 +35,7 @@
 
 struct posix_mq {
 	mqd_t des;
-	long msgsize;
+	struct mq_attr attr;
 	VALUE name;
 	VALUE thread;
 #ifdef MQD_TO_FD
@@ -227,7 +227,10 @@ static VALUE alloc(VALUE klass)
 	VALUE rv = Data_Make_Struct(klass, struct posix_mq, mark, _free, mq);
 
 	mq->des = MQD_INVALID;
-	mq->msgsize = -1;
+	mq->attr.mq_flags = 0;
+	mq->attr.mq_maxmsg = 0;
+	mq->attr.mq_msgsize = -1;
+	mq->attr.mq_curmsgs = 0;
 	mq->name = Qnil;
 	mq->thread = Qnil;
 	MQ_IO_SET(mq, Qnil);
@@ -363,6 +366,8 @@ static VALUE init(int argc, VALUE *argv, VALUE self)
 		rb_sys_fail("mq_open");
 
 	mq->name = rb_str_dup(name);
+	if (x.oflags & O_NONBLOCK)
+		mq->attr.mq_flags = O_NONBLOCK;
 
 	return self;
 }
@@ -446,7 +451,11 @@ static VALUE _send(int argc, VALUE *argv, VALUE self)
 	x.timeout = convert_timeout(&expire, timeout);
 	x.msg_prio = NIL_P(prio) ? 0 : NUM2UINT(prio);
 
-	rv = (mqd_t)rb_thread_blocking_region(xsend, &x, RUBY_UBF_IO, 0);
+	if (mq->attr.mq_flags & O_NONBLOCK)
+		rv = (mqd_t)xsend(&x);
+	else
+		rv = (mqd_t)rb_thread_blocking_region(xsend, &x,
+		                                      RUBY_UBF_IO, 0);
 	if (rv == MQD_INVALID)
 		rb_sys_fail("mq_send");
 
@@ -497,16 +506,6 @@ static VALUE to_io(VALUE self)
 	return mq->io;
 }
 #endif
-
-static void get_msgsize(struct posix_mq *mq)
-{
-	struct mq_attr attr;
-
-	if (mq_getattr(mq->des, &attr) < 0)
-		rb_sys_fail("mq_getattr");
-
-	mq->msgsize = attr.mq_msgsize;
-}
 
 static VALUE _receive(int wantarray, int argc, VALUE *argv, VALUE self);
 
@@ -559,25 +558,32 @@ static VALUE _receive(int wantarray, int argc, VALUE *argv, VALUE self)
 	ssize_t r;
 	struct timespec expire;
 
-	if (mq->msgsize < 0)
-		get_msgsize(mq);
+	if (mq->attr.mq_msgsize < 0) {
+		if (mq_getattr(mq->des, &mq->attr) < 0)
+			rb_sys_fail("mq_getattr");
+	}
 
 	rb_scan_args(argc, argv, "02", &buffer, &timeout);
 	x.timeout = convert_timeout(&expire, timeout);
 
 	if (NIL_P(buffer)) {
-		buffer = rb_str_new(0, mq->msgsize);
+		buffer = rb_str_new(0, mq->attr.mq_msgsize);
 	} else {
 		StringValue(buffer);
 		rb_str_modify(buffer);
-		rb_str_resize(buffer, mq->msgsize);
+		rb_str_resize(buffer, mq->attr.mq_msgsize);
 	}
 	OBJ_TAINT(buffer);
 	x.msg_ptr = RSTRING_PTR(buffer);
-	x.msg_len = (size_t)mq->msgsize;
+	x.msg_len = (size_t)mq->attr.mq_msgsize;
 	x.des = mq->des;
 
-	r = (ssize_t)rb_thread_blocking_region(xrecv, &x, RUBY_UBF_IO, 0);
+	if (mq->attr.mq_flags & O_NONBLOCK) {
+		r = (ssize_t)xrecv(&x);
+	} else {
+		r = (ssize_t)rb_thread_blocking_region(xrecv, &x,
+		                                       RUBY_UBF_IO, 0);
+	}
 	if (r < 0)
 		rb_sys_fail("mq_receive");
 
@@ -599,19 +605,18 @@ static VALUE _receive(int wantarray, int argc, VALUE *argv, VALUE self)
 static VALUE getattr(VALUE self)
 {
 	struct posix_mq *mq = get(self, 1);
-	struct mq_attr attr;
 	VALUE astruct;
 	VALUE *ptr;
 
-	if (mq_getattr(mq->des, &attr) < 0)
+	if (mq_getattr(mq->des, &mq->attr) < 0)
 		rb_sys_fail("mq_getattr");
 
 	astruct = rb_struct_alloc_noinit(cAttr);
 	ptr = RSTRUCT_PTR(astruct);
-	ptr[0] = LONG2NUM(attr.mq_flags);
-	ptr[1] = LONG2NUM(attr.mq_maxmsg);
-	ptr[2] = LONG2NUM(attr.mq_msgsize);
-	ptr[3] = LONG2NUM(attr.mq_curmsgs);
+	ptr[0] = LONG2NUM(mq->attr.mq_flags);
+	ptr[1] = LONG2NUM(mq->attr.mq_maxmsg);
+	ptr[2] = LONG2NUM(mq->attr.mq_msgsize);
+	ptr[3] = LONG2NUM(mq->attr.mq_curmsgs);
 
 	return astruct;
 }
@@ -824,15 +829,9 @@ static VALUE setnotify(VALUE self, VALUE arg)
  */
 static VALUE getnonblock(VALUE self)
 {
-	struct mq_attr attr;
 	struct posix_mq *mq = get(self, 1);
 
-	if (mq_getattr(mq->des, &attr) < 0)
-		rb_sys_fail("mq_getattr");
-
-	mq->msgsize = attr.mq_msgsize; /* optimization */
-
-	return attr.mq_flags & O_NONBLOCK ? Qtrue : Qfalse;
+	return mq->attr.mq_flags & O_NONBLOCK ? Qtrue : Qfalse;
 }
 
 /*
@@ -846,7 +845,7 @@ static VALUE getnonblock(VALUE self)
  */
 static VALUE setnonblock(VALUE self, VALUE nb)
 {
-	struct mq_attr newattr, oldattr;
+	struct mq_attr newattr;
 	struct posix_mq *mq = get(self, 1);
 
 	if (nb == Qtrue)
@@ -856,10 +855,10 @@ static VALUE setnonblock(VALUE self, VALUE nb)
 	else
 		rb_raise(rb_eArgError, "must be true or false");
 
-	if (mq_setattr(mq->des, &newattr, &oldattr) < 0)
+	if (mq_setattr(mq->des, &newattr, &mq->attr) < 0)
 		rb_sys_fail("mq_setattr");
 
-	mq->msgsize = oldattr.mq_msgsize; /* optimization */
+	mq->attr.mq_flags = newattr.mq_flags;
 
 	return nb;
 }
