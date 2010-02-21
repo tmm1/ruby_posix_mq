@@ -109,3 +109,13 @@ don't email the git mailing list or maintainer with posix_mq patches.
 
 All feedback (bug reports, user/development discussion, patches, pull
 requests) go to the mailing list: mailto:ruby.posix.mq@librelist.com
+
+== Mailing List Archives
+
+In addition to the rsync-able archives provided by http://librelist.com/, we
+are also mirrored to
+{Gmane}[http://gmane.org/info.php?group=gmane.comp.lang.ruby.posix-mq.general]
+and maintain our own mbox mirrors downloadable via HTTP.
+
+* nntp://news.gmane.org/gmane.comp.lang.ruby.posix-mq.general
+* http://bogomips.org/ruby_posix_mq/archives/
