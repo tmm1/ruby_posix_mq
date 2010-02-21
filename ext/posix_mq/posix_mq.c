@@ -488,7 +488,7 @@ static VALUE send0(VALUE self, VALUE buffer)
  *	mq.to_io	=> IO
  *
  * Returns an IO.select-able +IO+ object.  This method is only available
- * under Linux and is not intended to be portable.
+ * under Linux and FreeBSD and is not intended to be portable.
  */
 static VALUE to_io(VALUE self)
 {
