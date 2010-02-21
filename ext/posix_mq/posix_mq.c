@@ -127,14 +127,14 @@ struct rw_args {
 /* hope it's there..., TODO: a better version that works in rbx */
 struct timeval rb_time_interval(VALUE);
 
-static struct timespec *convert_timeout(struct timespec *dest, VALUE time)
+static struct timespec *convert_timeout(struct timespec *dest, VALUE t)
 {
 	struct timeval tv, now;
 
-	if (NIL_P(time))
+	if (NIL_P(t))
 		return NULL;
 
-	tv = rb_time_interval(time); /* aggregate return :( */
+	tv = rb_time_interval(t); /* aggregate return :( */
 	gettimeofday(&now, NULL);
 	dest->tv_sec = now.tv_sec + tv.tv_sec;
 	dest->tv_nsec = (now.tv_usec + tv.tv_usec) * 1000;
@@ -727,8 +727,7 @@ static void thread_notify_fd(union sigval sv)
 
 static void setup_notify_io(struct sigevent *not, VALUE io)
 {
-	VALUE fileno = rb_funcall(io, id_fileno, 0, 0);
-	int fd = NUM2INT(fileno);
+	int fd = NUM2INT(rb_funcall(io, id_fileno, 0, 0));
 	pthread_attr_t attr;
 	int e;
 
