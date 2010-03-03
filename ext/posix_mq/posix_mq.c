@@ -725,6 +725,10 @@ static void thread_notify_fd(union sigval sv)
 	while ((write(fd, "", 1) < 0) && (errno == EINTR || errno == EAGAIN));
 }
 
+/*
+ * TODO: Under Linux, we could just use netlink directly
+ * the same way glibc does...
+ */
 static void setup_notify_io(struct sigevent *not, VALUE io)
 {
 	int fd = NUM2INT(rb_funcall(io, id_fileno, 0, 0));
