@@ -47,7 +47,7 @@ class POSIX_MQ
     block.arity == 1 or
       raise ArgumentError, "arity of notify block must be 1"
     r, w = IO.pipe
-    thr = Thread.new(r, w, self) do |r, w, mq|
+    self.notify_thread = Thread.new(r, w, self) do |r, w, mq|
       begin
         begin
           r.read(1) or raise Errno::EINTR
@@ -62,7 +62,6 @@ class POSIX_MQ
       end
     end
     self.notify = w
-    self.notify_thread = thr
     nil
   end if RUBY_PLATFORM =~ /linux/
 
