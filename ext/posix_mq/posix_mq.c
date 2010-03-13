@@ -23,7 +23,6 @@
 #elif defined(HAVE___MQ_OSHANDLE) /* FreeBSD */
 #  define MQD_TO_FD(mqd) __mq_oshandle(mqd)
 #else
-#  warning mqd_t is not select()-able on your OS
 #  define MQ_IO_MARK(mq) ((void)(0))
 #  define MQ_IO_SET(mq,val) ((void)(0))
 #endif
@@ -741,8 +740,6 @@ static void setup_notify_io(struct sigevent *not, VALUE io)
 		goto err;
 #ifdef PTHREAD_STACK_MIN
 	(void)pthread_attr_setstacksize(&attr, PTHREAD_STACK_MIN);
-#else
-#  warning PTHREAD_STACK_MIN not available,
 #endif
 	not->sigev_notify = SIGEV_THREAD;
 	not->sigev_notify_function = thread_notify_fd;
