@@ -1,8 +1,8 @@
 # -*- encoding: binary -*-
 class POSIX_MQ
 
-  # version of POSIX_MQ, currently 0.3.1
-  VERSION = '0.3.1'
+  # version of POSIX_MQ, currently 0.4.0
+  VERSION = '0.4.0'
 
   # An analogous Struct to "struct mq_attr" in C.
   # This may be used in arguments for POSIX_MQ.new and
