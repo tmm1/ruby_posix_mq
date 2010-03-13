@@ -685,7 +685,7 @@ static VALUE name(VALUE self)
 {
 	struct posix_mq *mq = get(self, 0);
 
-	return mq->name;
+	return rb_str_dup(mq->name);
 }
 
 static int lookup_sig(VALUE sig)
