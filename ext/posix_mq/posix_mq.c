@@ -702,7 +702,7 @@ static int lookup_sig(VALUE sig)
 		sig = rb_str_new(ptr + 3, len - 3);
 
 	if (!list) {
-		VALUE mSignal = rb_define_module("Signal"""); /* avoid RDoc */
+		VALUE mSignal = rb_const_get(rb_cObject, rb_intern("Signal"));
 
 		list = rb_funcall(mSignal, rb_intern("list"), 0, 0);
 		rb_global_variable(&list);
