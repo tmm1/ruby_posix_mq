@@ -10,6 +10,10 @@
 #endif
 #include <ruby.h>
 
+#ifndef RB_GC_GUARD
+#  define RB_GC_GUARD(v) (*(volatile VALUE *)&(v))
+#endif
+
 #include <time.h>
 #include <mqueue.h>
 #include <fcntl.h>
@@ -247,9 +251,11 @@ static void attr_from_struct(struct mq_attr *attr, VALUE astruct, int all)
 {
 	VALUE *ptr;
 
-	if (CLASS_OF(astruct) != cAttr)
+	if (CLASS_OF(astruct) != cAttr) {
+		RB_GC_GUARD(astruct) = rb_inspect(astruct);
 		rb_raise(rb_eArgError, "not a POSIX_MQ::Attr: %s",
-		         RSTRING_PTR(rb_inspect(astruct)));
+		         RSTRING_PTR(astruct));
+	}
 
 	ptr = RSTRUCT_PTR(astruct);
 
@@ -305,10 +311,12 @@ static VALUE init(int argc, VALUE *argv, VALUE self)
 			x.oflags = O_CREAT|O_WRONLY;
 		else if (oflags == sym_rw)
 			x.oflags = O_CREAT|O_RDWR;
-		else
+		else {
+			RB_GC_GUARD(oflags) = oflags;
 			rb_raise(rb_eArgError,
 			         "symbol must be :r, :w, or :rw: %s",
-				 RSTRING_PTR(rb_inspect(oflags)));
+				 RSTRING_PTR(oflags));
+		}
 		break;
 	case T_BIGNUM:
 	case T_FIXNUM:
@@ -348,8 +356,9 @@ static VALUE init(int argc, VALUE *argv, VALUE self)
 	case T_NIL:
 		break;
 	default:
+		RB_GC_GUARD(attr) = rb_inspect(attr);
 		rb_raise(rb_eArgError, "attr must be a POSIX_MQ::Attr: %s",
-		         RSTRING_PTR(rb_inspect(attr)));
+		         RSTRING_PTR(attr));
 	}
 
 	mq->des = (mqd_t)xopen(&x);
@@ -710,8 +719,7 @@ static int lookup_sig(VALUE sig)
 
 	sig = rb_hash_aref(list, sig);
 	if (NIL_P(sig))
-		rb_raise(rb_eArgError, "invalid signal: %s\n",
-		         RSTRING_PTR(rb_inspect(sig)));
+		rb_raise(rb_eArgError, "invalid signal: %s\n", ptr);
 
 	return NUM2INT(sig);
 }
