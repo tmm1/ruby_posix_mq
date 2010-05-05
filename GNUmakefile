@@ -17,6 +17,7 @@ endif
 
 base_bins := posix-mq-rb
 bins := $(addprefix bin/, $(base_bins))
+man1_rdoc := $(addsuffix _1, $(base_bins))
 man1_bins := $(addsuffix .1, $(base_bins))
 man1_paths := $(addprefix man/man1/, $(man1_bins))
 
@@ -75,10 +76,10 @@ cgit_atom := http://git.bogomips.org/cgit/ruby_posix_mq.git/atom/?h=master
 atom = <link rel="alternate" title="Atom feed" href="$(1)" \
              type="application/atom+xml"/>
 
-# using rdoc 2.4.1+
+# using rdoc 2.5.x+
 doc: .document NEWS ChangeLog
-	for i in $(man1_bins); do > $$i; done
-	rdoc -Na -t "$(shell sed -ne '1s/^= //p' README)"
+	for i in $(man1_rdoc); do > $$i; done
+	rdoc -a -t "$(shell sed -ne '1s/^= //p' README)"
 	install -m644 COPYING doc/COPYING
 	install -m644 $(shell grep '^[A-Z]' .document)  doc/
 	$(MAKE) -C Documentation install-html install-man
@@ -95,7 +96,7 @@ doc: .document NEWS ChangeLog
 	  doc/NEWS.html doc/README.html
 	$(RAKE) -s news_atom > doc/NEWS.atom.xml
 	cd doc && ln README.html tmp && mv tmp index.html
-	$(RM) $(man1_bins)
+	$(RM) $(man1_rdoc)
 
 ifneq ($(VERSION),)
 rfproject := qrp

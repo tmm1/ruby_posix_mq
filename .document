@@ -4,4 +4,4 @@ NEWS
 ChangeLog
 lib
 ext/posix_mq/posix_mq.c
-posix-mq-rb.1
+posix-mq-rb_1
