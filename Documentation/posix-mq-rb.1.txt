@@ -1,14 +1,14 @@
-% posix-mq.rb(1) posix-mq.rb User Manual
+% posix-mq-rb(1) posix-mq-rb User Manual
 % Ruby POSIX MQ hackers <ruby.posix.mq@librelist.com>
 % Jan 1, 2010
 
 # NAME
 
-posix-mq.rb - command-line interface for POSIX message queues
+posix-mq-rb - command-line interface for POSIX message queues
 
 # SYNOPSIS
 
-MQUEUE=/name posix-mq.rb COMMAND [*OPTIONS*] [*ARGUMENTS*]
+MQUEUE=/name posix-mq-rb COMMAND [*OPTIONS*] [*ARGUMENTS*]
 
 # DESCRIPTION
 
@@ -75,7 +75,7 @@ The following command-line arguments are accepted:
 
 -n, \--nonblock
 :   Exit immediately with error if the message queue is full.
-    Normally posix-mq.rb(1) will block until the queue is writable or
+    Normally posix-mq-rb(1) will block until the queue is writable or
     interrupted.  This may not be used in conjunction with \--timeout .
 -t, \--timeout SECONDS
 :   Timeout and exit with error after SECONDS if the message queue is full.
@@ -96,7 +96,7 @@ The following command-line arguments are accepted:
 
 -n, \--nonblock
 :   Exit immediately with error if the message queue is empty.
-    Normally posix-mq.rb(1) will block until the queue is readable or
+    Normally posix-mq-rb(1) will block until the queue is readable or
     interrupted.  This may not be used in conjunction with \--timeout .
 -t, \--timeout SECONDS
 :   Timeout and exit with error after SECONDS if the message queue is empty.
@@ -111,9 +111,9 @@ The following command-line arguments are accepted:
 
 # WAIT USAGE
 
-The *wait* command will cause posix-mq.rb(1) to sleep until a message is
+The *wait* command will cause posix-mq-rb(1) to sleep until a message is
 available in the queue.  Only one process may wait on an empty queue,
-posix-mq.rb(1) will exit with an error if there is another waiting process.
+posix-mq-rb(1) will exit with an error if there is another waiting process.
 
 It takes no arguments and accepts the following options:
 

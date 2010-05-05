@@ -28,7 +28,7 @@ network-aware message queue implementations.
 
 * Documented library API
 
-* Includes a generic "posix-mq.rb" command-line tool with manpage.
+* Includes a generic "posix-mq-rb" command-line tool with manpage.
 
 == Install
 

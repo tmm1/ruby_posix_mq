@@ -5,7 +5,7 @@ PANDOC_OPTS = -f markdown --email-obfuscation=none --sanitize-html
 pandoc = $(PANDOC) $(PANDOC_OPTS)
 pandoc_html = $(pandoc) --toc -t html --no-wrap
 
-man1 := $(addsuffix .1,posix-mq.rb)
+man1 := $(addsuffix .1,posix-mq-rb)
 html1 := $(addsuffix .html,$(man1))
 
 all:: html man

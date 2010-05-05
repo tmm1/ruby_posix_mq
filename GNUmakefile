@@ -15,7 +15,7 @@ ifeq ($(RUBY_VERSION),)
   RUBY_VERSION := $(shell $(RUBY) -e 'puts RUBY_VERSION')
 endif
 
-base_bins := posix-mq.rb
+base_bins := posix-mq-rb
 bins := $(addprefix bin/, $(base_bins))
 man1_bins := $(addsuffix .1, $(base_bins))
 man1_paths := $(addprefix man/man1/, $(man1_bins))

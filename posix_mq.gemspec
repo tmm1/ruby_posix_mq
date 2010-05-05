@@ -12,7 +12,7 @@ Gem::Specification.new do |s|
   s.date = Time.now.utc.strftime('%Y-%m-%d')
   s.description = File.read("README").split(/\n\n/)[1]
   s.email = %q{ruby.posix.mq@librelist.com}
-  s.executables = %w(posix-mq.rb)
+  s.executables = %w(posix-mq-rb)
   s.extensions = %w(ext/posix_mq/extconf.rb)
 
   s.extra_rdoc_files = File.readlines('.document').map! do |x|

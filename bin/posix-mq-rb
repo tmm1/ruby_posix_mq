@@ -1,4 +1,4 @@
-#!/usr/bin/ruby
+#!/usr/bin/env ruby
 # -*- encoding: binary -*-
 Encoding.default_external = Encoding::BINARY if defined?(Encoding)
 $stderr.sync = $stdout.sync = true
