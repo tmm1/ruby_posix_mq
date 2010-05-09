@@ -3,16 +3,16 @@ require 'test/unit'
 require 'posix_mq'
 require 'thread'
 require 'fcntl'
+require 'set'
 $stderr.sync = $stdout.sync = true
 
 class Test_POSIX_MQ < Test::Unit::TestCase
+  METHODS = Set.new(POSIX_MQ.instance_methods.map { |x| x.to_sym })
 
-  HAVE_TO_IO = if POSIX_MQ.instance_methods.grep(/\Ato_io\z/).empty?
+  METHODS.include?(:to_io) or
     warn "POSIX_MQ#to_io not supported on this platform: #{RUBY_PLATFORM}"
-    false
-  else
-    true
-  end
+  METHODS.include?(:notify) or
+    warn "POSIX_MQ#notify not supported on this platform: #{RUBY_PLATFORM}"
 
   def setup
     @mq = nil
@@ -155,7 +155,7 @@ class Test_POSIX_MQ < Test::Unit::TestCase
     @mq = POSIX_MQ.new @path, IO::CREAT|IO::RDWR, 0666
     assert @mq.to_io.kind_of?(IO)
     assert_nothing_raised { IO.select([@mq], nil, nil, 0) }
-  end if HAVE_TO_IO
+  end if METHODS.include?(:to_io)
 
   def test_notify
     rd, wr = IO.pipe
@@ -224,7 +224,7 @@ class Test_POSIX_MQ < Test::Unit::TestCase
   def test_new_sym_w
     @mq = POSIX_MQ.new @path, :w
     assert_equal IO::WRONLY, @mq.to_io.fcntl(Fcntl::F_GETFL)
-  end if HAVE_TO_IO
+  end if METHODS.include?(:to_io)
 
   def test_new_sym_r
     @mq = POSIX_MQ.new @path, :w
@@ -232,7 +232,7 @@ class Test_POSIX_MQ < Test::Unit::TestCase
     assert_nothing_raised { mq = POSIX_MQ.new @path, :r }
     assert_equal IO::RDONLY, mq.to_io.fcntl(Fcntl::F_GETFL)
     assert_nil mq.close
-  end if HAVE_TO_IO
+  end if METHODS.include?(:to_io)
 
   def test_new_path_only
     @mq = POSIX_MQ.new @path, :w
@@ -240,12 +240,12 @@ class Test_POSIX_MQ < Test::Unit::TestCase
     assert_nothing_raised { mq = POSIX_MQ.new @path }
     assert_equal IO::RDONLY, mq.to_io.fcntl(Fcntl::F_GETFL)
     assert_nil mq.close
-  end if HAVE_TO_IO
+  end if METHODS.include?(:to_io)
 
   def test_new_sym_wr
     @mq = POSIX_MQ.new @path, :rw
     assert_equal IO::RDWR, @mq.to_io.fcntl(Fcntl::F_GETFL)
-  end if HAVE_TO_IO
+  end if METHODS.include?(:to_io)
 
   def test_new_attr
     mq_attr = POSIX_MQ::Attr.new(IO::NONBLOCK, 1, 1, 0)
@@ -274,24 +274,21 @@ class Test_POSIX_MQ < Test::Unit::TestCase
     q = Queue.new
     @mq = POSIX_MQ.new(@path, :rw)
     assert_nothing_raised { @mq.notify { |mq| q << mq } }
-    @mq << "hi"
-    assert_equal POSIX_MQ, q.pop.class
+    assert_nothing_raised { Process.waitpid2(fork { @mq << "hi" }) }
+    assert_equal @mq.object_id, q.pop.object_id
     assert_equal "hi", @mq.receive.first
     assert_nothing_raised { @mq.notify { |mq| q << "hi" } }
-    @mq << "bye"
+    assert_nothing_raised { Process.waitpid2(fork { @mq << "bye" }) }
     assert_equal "hi", q.pop
-  end if POSIX_MQ.respond_to?(:notify)
+  end if METHODS.include?(:notify)
 
   def test_notify_thread
     q = Queue.new
     @mq = POSIX_MQ.new(@path, :rw)
-    @mq.notify_thread = thr = Thread.new { sleep }
-    assert thr.alive?
     @mq.notify { |mq| q << Thread.current }
     @mq << "."
     x = q.pop
     assert x.instance_of?(Thread)
     assert Thread.current != x
-    assert ! thr.alive?
-  end if POSIX_MQ.respond_to?(:notify)
+  end if METHODS.include?(:notify)
 end
