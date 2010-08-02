@@ -362,8 +362,14 @@ static VALUE init(int argc, VALUE *argv, VALUE self)
 	}
 
 	mq->des = (mqd_t)xopen(&x);
-	if (mq->des == MQD_INVALID)
-		rb_sys_fail("mq_open");
+	if (mq->des == MQD_INVALID) {
+		if (errno == ENOMEM || errno == EMFILE || errno == ENFILE) {
+			rb_gc();
+			mq->des = (mqd_t)xopen(&x);
+		}
+		if (mq->des == MQD_INVALID)
+			rb_sys_fail("mq_open");
+	}
 
 	mq->name = rb_str_dup(name);
 	if (x.oflags & O_NONBLOCK)
@@ -736,6 +742,20 @@ static void thread_notify_fd(union sigval sv)
 	while ((write(fd, "", 1) < 0) && (errno == EINTR || errno == EAGAIN));
 }
 
+static void my_mq_notify(mqd_t des, struct sigevent *not)
+{
+	mqd_t rv = mq_notify(des, not);
+
+	if (rv == MQD_INVALID) {
+		if (errno == ENOMEM) {
+			rb_gc();
+			rv = mq_notify(des, not);
+		}
+		if (rv == MQD_INVALID)
+			rb_sys_fail("mq_notify");
+	}
+}
+
 /* :nodoc: */
 static VALUE setnotify_exec(VALUE self, VALUE io, VALUE thr)
 {
@@ -763,8 +783,7 @@ static VALUE setnotify_exec(VALUE self, VALUE io, VALUE thr)
 		rb_funcall(mq->thread, id_kill, 0, 0);
 	mq->thread = thr;
 
-	if (mq_notify(mq->des, &not) < 0)
-		rb_sys_fail("mq_notify");
+	my_mq_notify(mq->des, &not);
 
 	return thr;
 }
@@ -834,8 +853,7 @@ static VALUE setnotify(VALUE self, VALUE arg)
 		rb_raise(rb_eArgError, "must be a signal or nil");
 	}
 
-	if (mq_notify(mq->des, notification) < 0)
-		rb_sys_fail("mq_notify");
+	my_mq_notify(mq->des, notification);
 
 	return rv;
 }

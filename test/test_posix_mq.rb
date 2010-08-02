@@ -27,6 +27,12 @@ class Test_POSIX_MQ < Test::Unit::TestCase
     assert @mq.closed?
   end
 
+  def test_gc
+    assert_nothing_raised do
+      2025.times { POSIX_MQ.new(@path, :rw) }
+    end
+  end
+
   def test_name_clobber_proof
     @mq = POSIX_MQ.new(@path, :rw)
     tmp = @mq.name
