@@ -29,11 +29,8 @@
 #else
 #  define MQ_IO_MARK(mq) ((void)(0))
 #  define MQ_IO_SET(mq,val) ((void)(0))
-#endif
-
-#ifdef MQD_TO_FD
-#  define MQ_IO_MARK(mq) rb_gc_mark((mq)->io)
-#  define MQ_IO_SET(mq,val) do { (mq)->io = (val); } while (0)
+#  define MQ_IO_CLOSE(mq) ((void)(0))
+#  define MQ_IO_NILP(mq) ((void)(1))
 #endif
 
 struct posix_mq {
@@ -45,6 +42,23 @@ struct posix_mq {
 	VALUE io;
 #endif
 };
+
+#ifdef MQD_TO_FD
+#  define MQ_IO_MARK(mq) rb_gc_mark((mq)->io)
+#  define MQ_IO_SET(mq,val) do { (mq)->io = (val); } while (0)
+#  define MQ_IO_NIL_P(mq) NIL_P((mq)->io)
+static int MQ_IO_CLOSE(struct posix_mq *mq)
+{
+	if (NIL_P(mq->io))
+		return 0;
+
+	/* not safe during GC */
+	rb_io_close(mq->io);
+	mq->io = Qnil;
+
+	return 1;
+}
+#endif
 
 static VALUE cPOSIX_MQ, cAttr;
 static ID id_new, id_kill, id_fileno;
@@ -205,12 +219,10 @@ static void _free(void *ptr)
 {
 	struct posix_mq *mq = ptr;
 
-	if (mq->des != MQD_INVALID) {
+	if (mq->des != MQD_INVALID && MQ_IO_NIL_P(mq)) {
 		/* we ignore errors when gc-ing */
-		int saved_errno = errno;
-
 		mq_close(mq->des);
-		errno = saved_errno;
+		errno = 0;
 	}
 	xfree(ptr);
 }
@@ -667,11 +679,11 @@ static VALUE _close(VALUE self)
 {
 	struct posix_mq *mq = get(self, 1);
 
-	if (mq_close(mq->des) < 0)
-		rb_sys_fail("mq_close");
-
+	if (! MQ_IO_CLOSE(mq)) {
+		if (mq_close(mq->des) == -1)
+			rb_sys_fail("mq_close");
+	}
 	mq->des = MQD_INVALID;
-	MQ_IO_SET(mq, Qnil);
 
 	return Qnil;
 }

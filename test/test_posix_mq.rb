@@ -30,6 +30,7 @@ class Test_POSIX_MQ < Test::Unit::TestCase
   def test_gc
     assert_nothing_raised do
       2025.times { POSIX_MQ.new(@path, :rw) }
+      2025.times { a = POSIX_MQ.new(@path, :rw); a.to_io }
     end
   end
 
