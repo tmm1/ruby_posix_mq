@@ -322,4 +322,18 @@ class Test_POSIX_MQ < Test::Unit::TestCase
     assert x.instance_of?(Thread)
     assert Thread.current != x
   end if POSIX_MQ.method_defined?(:notify)
+
+  def test_bad_open_mode
+    assert_raises(ArgumentError) { mq = POSIX_MQ.new(@path, "rw") }
+  end
+
+  def test_bad_open_attr
+    assert_raises(TypeError) { POSIX_MQ.new(@path, :rw, 0666, [0, 1, 1, 0]) }
+  end
+
+  def test_bad_setattr
+    @mq = POSIX_MQ.new @path, IO::CREAT|IO::WRONLY, 0666
+    assert_raises(TypeError) { @mq.attr = {} }
+    assert_raises(TypeError) { @mq.attr = Struct.new(:a,:b,:c,:d).new }
+  end
 end

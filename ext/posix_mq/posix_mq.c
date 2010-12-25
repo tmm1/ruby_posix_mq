@@ -14,10 +14,6 @@
 #  define NUM2TIMET NUM2INT
 #endif
 
-#ifndef RB_GC_GUARD
-#  define RB_GC_GUARD(v) (*(volatile VALUE *)&(v))
-#endif
-
 #include <time.h>
 #include <mqueue.h>
 #include <fcntl.h>
@@ -303,17 +299,21 @@ static struct posix_mq *get(VALUE self, int need_valid)
 	return mq;
 }
 
+static void check_struct_type(VALUE astruct)
+{
+	if (CLASS_OF(astruct) == cAttr)
+		return;
+	astruct = rb_inspect(astruct);
+	rb_raise(rb_eTypeError, "not a POSIX_MQ::Attr: %s",
+		 StringValuePtr(astruct));
+}
+
 /* converts the POSIX_MQ::Attr astruct into a struct mq_attr attr */
 static void attr_from_struct(struct mq_attr *attr, VALUE astruct, int all)
 {
 	VALUE *ptr;
 
-	if (CLASS_OF(astruct) != cAttr) {
-		RB_GC_GUARD(astruct) = rb_inspect(astruct);
-		rb_raise(rb_eArgError, "not a POSIX_MQ::Attr: %s",
-		         RSTRING_PTR(astruct));
-	}
-
+	check_struct_type(astruct);
 	ptr = RSTRUCT_PTR(astruct);
 
 	attr->mq_flags = NUM2LONG(ptr[0]);
@@ -369,10 +369,10 @@ static VALUE init(int argc, VALUE *argv, VALUE self)
 		else if (oflags == sym_rw)
 			x.oflags = O_CREAT|O_RDWR;
 		else {
-			RB_GC_GUARD(oflags) = oflags;
+			oflags = rb_inspect(oflags);
 			rb_raise(rb_eArgError,
 			         "symbol must be :r, :w, or :rw: %s",
-				 RSTRING_PTR(oflags));
+				 StringValuePtr(oflags));
 		}
 		break;
 	case T_BIGNUM:
@@ -413,9 +413,7 @@ static VALUE init(int argc, VALUE *argv, VALUE self)
 	case T_NIL:
 		break;
 	default:
-		RB_GC_GUARD(attr) = rb_inspect(attr);
-		rb_raise(rb_eArgError, "attr must be a POSIX_MQ::Attr: %s",
-		         RSTRING_PTR(attr));
+		check_struct_type(attr);
 	}
 
 	mq->des = (mqd_t)xopen(&x);
