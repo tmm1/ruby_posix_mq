@@ -64,6 +64,7 @@ static int MQ_IO_CLOSE(struct posix_mq *mq)
 
 static VALUE cPOSIX_MQ, cAttr;
 static ID id_new, id_kill, id_fileno, id_mul, id_divmod;
+static ID id_flags, id_maxmsg, id_msgsize, id_curmsgs;
 static ID sym_r, sym_w, sym_rw;
 static const mqd_t MQD_INVALID = (mqd_t)-1;
 
@@ -74,33 +75,21 @@ static const mqd_t MQD_INVALID = (mqd_t)-1;
 #ifndef RSTRING_LEN
 #  define RSTRING_LEN(s) (RSTRING(s)->len)
 #endif
-#ifndef RSTRUCT_PTR
-#  define RSTRUCT_PTR(s) (RSTRUCT(s)->ptr)
-#endif
-#ifndef RSTRUCT_LEN
-#  define RSTRUCT_LEN(s) (RSTRUCT(s)->len)
+#ifndef RFLOAT_VALUE
+#  define RFLOAT_VALUE(f) (RFLOAT(f)->value)
 #endif
 
 #ifndef HAVE_RB_STR_SET_LEN
-#  ifdef RUBINIUS
-#    define rb_str_set_len(str,len) rb_str_resize(str,len)
-#  else /* 1.8.6 optimized version */
 /* this is taken from Ruby 1.8.7, 1.8.6 may not have it */
+#  ifdef RUBINIUS
+#    error upgrade Rubinius, rb_str_set_len should be available
+#  endif
 static void rb_18_str_set_len(VALUE str, long len)
 {
 	RSTRING(str)->len = len;
 	RSTRING(str)->ptr[len] = '\0';
 }
-#    define rb_str_set_len(str,len) rb_18_str_set_len(str,len)
-#  endif /* ! RUBINIUS */
 #endif /* !defined(HAVE_RB_STR_SET_LEN) */
-
-#ifndef HAVE_RB_STRUCT_ALLOC_NOINIT
-static VALUE rb_struct_alloc_noinit(VALUE class)
-{
-	return rb_funcall(class, id_new, 0, 0);
-}
-#endif /* !defined(HAVE_RB_STRUCT_ALLOC_NOINIT) */
 
 /* partial emulation of the 1.9 rb_thread_blocking_region under 1.8 */
 #ifndef HAVE_RB_THREAD_BLOCKING_REGION
@@ -308,22 +297,24 @@ static void check_struct_type(VALUE astruct)
 		 StringValuePtr(astruct));
 }
 
-/* converts the POSIX_MQ::Attr astruct into a struct mq_attr attr */
-static void attr_from_struct(struct mq_attr *attr, VALUE astruct, int all)
+static void rstruct2mqattr(struct mq_attr *attr, VALUE astruct, int all)
 {
-	VALUE *ptr;
+	VALUE tmp;
 
 	check_struct_type(astruct);
-	ptr = RSTRUCT_PTR(astruct);
+	attr->mq_flags = NUM2LONG(rb_funcall(astruct, id_flags, 0));
 
-	attr->mq_flags = NUM2LONG(ptr[0]);
+	tmp = rb_funcall(astruct, id_maxmsg, 0);
+	if (all || !NIL_P(tmp))
+		attr->mq_maxmsg = NUM2LONG(tmp);
 
-	if (all || !NIL_P(ptr[1]))
-		attr->mq_maxmsg = NUM2LONG(ptr[1]);
-	if (all || !NIL_P(ptr[2]))
-		attr->mq_msgsize = NUM2LONG(ptr[2]);
-	if (!NIL_P(ptr[3]))
-		attr->mq_curmsgs = NUM2LONG(ptr[3]);
+	tmp = rb_funcall(astruct, id_msgsize, 0);
+	if (all || !NIL_P(tmp))
+		attr->mq_msgsize = NUM2LONG(tmp);
+
+	tmp = rb_funcall(astruct, id_curmsgs, 0);
+	if (!NIL_P(tmp))
+		attr->mq_curmsgs = NUM2LONG(tmp);
 }
 
 /*
@@ -404,7 +395,7 @@ static VALUE init(int argc, VALUE *argv, VALUE self)
 	switch (TYPE(attr)) {
 	case T_STRUCT:
 		x.argc = 4;
-		attr_from_struct(&x.attr, attr, 1);
+		rstruct2mqattr(&x.attr, attr, 1);
 
 		/* principle of least surprise */
 		if (x.attr.mq_flags & O_NONBLOCK)
@@ -670,19 +661,15 @@ static VALUE getattr(VALUE self)
 {
 	struct posix_mq *mq = get(self, 1);
 	VALUE astruct;
-	VALUE *ptr;
 
 	if (mq_getattr(mq->des, &mq->attr) < 0)
 		rb_sys_fail("mq_getattr");
 
-	astruct = rb_struct_alloc_noinit(cAttr);
-	ptr = RSTRUCT_PTR(astruct);
-	ptr[0] = LONG2NUM(mq->attr.mq_flags);
-	ptr[1] = LONG2NUM(mq->attr.mq_maxmsg);
-	ptr[2] = LONG2NUM(mq->attr.mq_msgsize);
-	ptr[3] = LONG2NUM(mq->attr.mq_curmsgs);
-
-	return astruct;
+	return rb_funcall(cAttr, id_new, 4,
+	                  LONG2NUM(mq->attr.mq_flags),
+	                  LONG2NUM(mq->attr.mq_maxmsg),
+	                  LONG2NUM(mq->attr.mq_msgsize),
+	                  LONG2NUM(mq->attr.mq_curmsgs));
 }
 
 /*
@@ -700,7 +687,7 @@ static VALUE setattr(VALUE self, VALUE astruct)
 	struct posix_mq *mq = get(self, 1);
 	struct mq_attr newattr;
 
-	attr_from_struct(&newattr, astruct, 0);
+	rstruct2mqattr(&newattr, astruct, 0);
 
 	if (mq_setattr(mq->des, &newattr, NULL) < 0)
 		rb_sys_fail("mq_setattr");
@@ -1006,6 +993,10 @@ void Init_posix_mq_ext(void)
 	id_fileno = rb_intern("fileno");
 	id_mul = rb_intern("*");
 	id_divmod = rb_intern("divmod");
+	id_flags = rb_intern("flags");
+	id_maxmsg = rb_intern("maxmsg");
+	id_msgsize = rb_intern("msgsize");
+	id_curmsgs = rb_intern("curmsgs");
 	sym_r = ID2SYM(rb_intern("r"));
 	sym_w = ID2SYM(rb_intern("w"));
 	sym_rw = ID2SYM(rb_intern("rw"));

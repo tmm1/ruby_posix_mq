@@ -30,7 +30,7 @@ class Test_POSIX_MQ < Test::Unit::TestCase
       2025.times { POSIX_MQ.new(@path, :rw) }
       2025.times { @mq = POSIX_MQ.new(@path, :rw); @mq.to_io }
     end
-  end
+  end unless defined?RUBY_ENGINE && RUBY_ENGINE == "rbx"
 
   def test_name_clobber_proof
     @mq = POSIX_MQ.new(@path, :rw)

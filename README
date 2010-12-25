@@ -26,6 +26,8 @@ network-aware message queue implementations.
 * Thread-safe blocking operations under Ruby 1.9, releases GVL
   before blocking operations.
 
+* Works under Ruby 1.8, Ruby 1.9 and Rubinius 1.2
+
 * Documented library API
 
 * Includes a generic "posix-mq-rb" command-line tool with manpage.
