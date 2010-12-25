@@ -10,6 +10,10 @@
 #endif
 #include <ruby.h>
 
+#ifndef NUM2TIMET
+#  define NUM2TIMET NUM2INT
+#endif
+
 #ifndef RB_GC_GUARD
 #  define RB_GC_GUARD(v) (*(volatile VALUE *)&(v))
 #endif
@@ -21,6 +25,8 @@
 #include <errno.h>
 #include <assert.h>
 #include <unistd.h>
+#include <float.h>
+#include <math.h>
 
 #if defined(__linux__)
 #  define MQD_TO_FD(mqd) (int)(mqd)
@@ -61,7 +67,7 @@ static int MQ_IO_CLOSE(struct posix_mq *mq)
 #endif
 
 static VALUE cPOSIX_MQ, cAttr;
-static ID id_new, id_kill, id_fileno;
+static ID id_new, id_kill, id_fileno, id_mul, id_divmod;
 static ID sym_r, sym_w, sym_rw;
 static const mqd_t MQD_INVALID = (mqd_t)-1;
 
@@ -141,24 +147,63 @@ struct rw_args {
 	struct timespec *timeout;
 };
 
-/* hope it's there..., TODO: a better version that works in rbx */
-struct timeval rb_time_interval(VALUE);
+static void num2timespec(struct timespec *ts, VALUE t)
+{
+	switch (TYPE(t)) {
+	case T_FIXNUM:
+	case T_BIGNUM:
+		ts->tv_sec = NUM2TIMET(t);
+		ts->tv_nsec = 0;
+		break;
+	case T_FLOAT: {
+		double f, d;
+		double val = RFLOAT_VALUE(t);
+
+		d = modf(val, &f);
+		if (d >= 0) {
+			ts->tv_nsec = (long)(d * 1e9 + 0.5);
+		} else {
+			ts->tv_nsec = (long)(-d * 1e9 + 0.5);
+			if (ts->tv_nsec > 0) {
+				ts->tv_nsec = 1000000000 - ts->tv_nsec;
+				f -= 1;
+			}
+		}
+		ts->tv_sec = (time_t)f;
+		if (f != ts->tv_sec)
+			rb_raise(rb_eRangeError, "%f out of range", val);
+		ts->tv_sec = (time_t)f;
+		}
+		break;
+	default: {
+		VALUE f;
+		VALUE ary = rb_funcall(t, id_divmod, 1, INT2FIX(1));
+
+		Check_Type(ary, T_ARRAY);
+
+		ts->tv_sec = NUM2TIMET(rb_ary_entry(ary, 0));
+		f = rb_ary_entry(ary, 1);
+		f = rb_funcall(f, id_mul, 1, INT2FIX(1000000000));
+		ts->tv_nsec = NUM2LONG(f);
+		}
+	}
+}
 
 static struct timespec *convert_timeout(struct timespec *dest, VALUE t)
 {
-	struct timeval tv, now;
+	struct timespec ts, now;
 
 	if (NIL_P(t))
 		return NULL;
 
-	tv = rb_time_interval(t); /* aggregate return :( */
-	gettimeofday(&now, NULL);
-	dest->tv_sec = now.tv_sec + tv.tv_sec;
-	dest->tv_nsec = (now.tv_usec + tv.tv_usec) * 1000;
+	num2timespec(&ts, t);
+	clock_gettime(CLOCK_REALTIME, &now);
+	dest->tv_sec = now.tv_sec + ts.tv_sec;
+	dest->tv_nsec = now.tv_nsec + ts.tv_nsec;
 
 	if (dest->tv_nsec > 1000000000) {
 		dest->tv_nsec -= 1000000000;
-		dest->tv_sec++;
+		++dest->tv_sec;
 	}
 
 	return dest;
@@ -961,6 +1006,8 @@ void Init_posix_mq_ext(void)
 	id_new = rb_intern("new");
 	id_kill = rb_intern("kill");
 	id_fileno = rb_intern("fileno");
+	id_mul = rb_intern("*");
+	id_divmod = rb_intern("divmod");
 	sym_r = ID2SYM(rb_intern("r"));
 	sym_w = ID2SYM(rb_intern("w"));
 	sym_rw = ID2SYM(rb_intern("rw"));

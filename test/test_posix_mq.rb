@@ -49,14 +49,40 @@ class Test_POSIX_MQ < Test::Unit::TestCase
     assert_equal @mq.object_id, clone.object_id
   end
 
-  def test_timed_receive
+  def test_timed_receive_float
     interval = 0.01
     @mq = POSIX_MQ.new(@path, :rw)
     assert ! @mq.nonblock?
     t0 = Time.now
     assert_raises(Errno::ETIMEDOUT) { @mq.receive "", interval }
     elapsed = Time.now - t0
-    assert elapsed > interval
+    assert elapsed > interval, elapsed.inspect
+    assert elapsed < 0.02, elapsed.inspect
+  end
+
+  def test_timed_receive_divmod
+    interval = Object.new
+    def interval.divmod(num)
+      num == 1 ? [ 0, 0.01 ] : nil
+    end
+    @mq = POSIX_MQ.new(@path, :rw)
+    assert ! @mq.nonblock?
+    t0 = Time.now
+    assert_raises(Errno::ETIMEDOUT) { @mq.receive "", interval }
+    elapsed = Time.now - t0
+    assert elapsed >= 0.01, elapsed.inspect
+    assert elapsed <= 0.02, elapsed.inspect
+  end
+
+  def test_timed_receive_fixnum
+    interval = 1
+    @mq = POSIX_MQ.new(@path, :rw)
+    assert ! @mq.nonblock?
+    t0 = Time.now
+    assert_raises(Errno::ETIMEDOUT) { @mq.receive "", interval }
+    elapsed = Time.now - t0
+    assert elapsed >= interval, elapsed.inspect
+    assert elapsed < 1.10, elapsed.inspect
   end
 
   def test_timed_send
