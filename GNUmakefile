@@ -2,7 +2,7 @@
 all::
 RUBY = ruby
 RAKE = rake
-GIT_URL = git://git.bogomips.org/ruby_posix_mq.git
+RSYNC = rsync
 
 GIT-VERSION-FILE: .FORCE-GIT-VERSION-FILE
 	@./GIT-VERSION-GEN
@@ -39,10 +39,10 @@ clean:
 	-$(MAKE) -C ext/posix_mq clean
 	$(RM) $(setup_rb_files) ext/posix_mq/Makefile
 
-man:
-	$(MAKE) -C Documentation install-man
+man html:
+	$(MAKE) -C Documentation install-$@
 
-pkg_extra := GIT-VERSION-FILE NEWS ChangeLog
+pkg_extra := GIT-VERSION-FILE NEWS ChangeLog LATEST
 manifest: $(pkg_extra) man
 	$(RM) .manifest
 	$(MAKE) .manifest
@@ -54,48 +54,16 @@ manifest: $(pkg_extra) man
 	cmp $@+ $@ || mv $@+ $@
 	$(RM) $@+
 
-NEWS: GIT-VERSION-FILE
-	$(RAKE) -s news_rdoc > $@+
-	mv $@+ $@
-
-SINCE = 0.4.0
-ChangeLog: LOG_VERSION = \
-  $(shell git rev-parse -q "$(GIT_VERSION)" >/dev/null 2>&1 && \
-          echo $(GIT_VERSION) || git describe)
-ifneq ($(SINCE),)
-ChangeLog: log_range = v$(SINCE)..$(LOG_VERSION)
-endif
 ChangeLog: GIT-VERSION-FILE
-	@echo "ChangeLog from $(GIT_URL) ($(log_range))" > $@+
-	@echo >> $@+
-	git log $(log_range) | sed -e 's/^/    /' >> $@+
-	mv $@+ $@
+	wrongdoc prepare
 
-news_atom := http://bogomips.org/ruby_posix_mq/NEWS.atom.xml
-cgit_atom := http://git.bogomips.org/cgit/ruby_posix_mq.git/atom/?h=master
-atom = <link rel="alternate" title="Atom feed" href="$(1)" \
-             type="application/atom+xml"/>
-
-# using rdoc 2.5.x+
-doc: .document NEWS ChangeLog
+doc: .document NEWS ChangeLog man html
 	for i in $(man1_rdoc); do > $$i; done
-	rdoc -a -t "$(shell sed -ne '1s/^= //p' README)"
+	$(RM) -r doc
+	wrongdoc all
 	install -m644 COPYING doc/COPYING
-	install -m644 $(shell grep '^[A-Z]' .document)  doc/
-	$(MAKE) -C Documentation install-html install-man
+	install -m644 $(shell grep '^[A-Z]' .document) doc/
 	install -m644 $(man1_paths) doc/
-	cd doc && for i in $(base_bins); do \
-	  html=$$(echo $$i | sed 's/\.rb/_rb/')_1.html; \
-	  sed -e '/"documentation">/r man1/'$$i'.1.html' \
-		< $$html > tmp && mv tmp $$html; done
-	$(RUBY) -i -p -e \
-	  '$$_.gsub!("</title>",%q{\&$(call atom,$(cgit_atom))})' \
-	  doc/ChangeLog.html
-	$(RUBY) -i -p -e \
-	  '$$_.gsub!("</title>",%q{\&$(call atom,$(news_atom))})' \
-	  doc/NEWS.html doc/README.html
-	$(RAKE) -s news_atom > doc/NEWS.atom.xml
-	cd doc && ln README.html tmp && mv tmp index.html
 	$(RM) $(man1_rdoc)
 
 ifneq ($(VERSION),)
@@ -109,10 +77,10 @@ release_changes := release_changes-$(VERSION)
 release-notes: $(release_notes)
 release-changes: $(release_changes)
 $(release_changes):
-	$(RAKE) -s release_changes > $@+
+	wrongdoc release_changes > $@+
 	$(VISUAL) $@+ && test -s $@+ && mv $@+ $@
 $(release_notes):
-	GIT_URL=$(GIT_URL) $(RAKE) -s release_notes > $@+
+	wrongdoc release_notes > $@+
 	$(VISUAL) $@+ && test -s $@+ && mv $@+ $@
 
 # ensures we're actually on the tagged $(VERSION), only used for release
@@ -177,4 +145,22 @@ test: test-unit
 test-unit: build
 	$(RUBY) -I lib:ext/posix_mq test/test_posix_mq.rb
 
-.PHONY: .FORCE-GIT-VERSION-FILE doc manifest man test
+# publishes docs to http://bogomips.org/ruby_posix_mq/
+publish_doc:
+	-git set-file-times
+	$(RM) -r doc
+	$(MAKE) doc
+	find doc/images -type f | \
+		TZ=UTC xargs touch -d '1970-01-01 00:00:03' doc/rdoc.css
+	$(MAKE) doc_gz
+	$(RSYNC) -av doc/ bogomips.org:/srv/bogomips/ruby_posix_mq/
+	git ls-files | xargs touch
+
+# Create gzip variants of the same timestamp as the original so nginx
+# "gzip_static on" can serve the gzipped versions directly.
+doc_gz: docs = $(shell find doc -type f ! -regex '^.*\.\(gif\|jpg\|png\|gz\)$$')
+doc_gz:
+	for i in $(docs); do \
+	  gzip --rsyncable -9 < $$i > $$i.gz; touch -r $$i $$i.gz; done
+
+.PHONY: .FORCE-GIT-VERSION-FILE doc manifest man test html
