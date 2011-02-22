@@ -89,6 +89,7 @@ static void rb_18_str_set_len(VALUE str, long len)
 	RSTRING(str)->len = len;
 	RSTRING(str)->ptr[len] = '\0';
 }
+#define rb_str_set_len rb_18_str_set_len
 #endif /* !defined(HAVE_RB_STR_SET_LEN) */
 
 /* partial emulation of the 1.9 rb_thread_blocking_region under 1.8 */
