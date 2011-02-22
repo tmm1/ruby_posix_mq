@@ -25,6 +25,14 @@ class Test_POSIX_MQ < Test::Unit::TestCase
     assert @mq.closed?
   end
 
+  def test_open_with_null_byte
+    assert_raises(ArgumentError) { POSIX_MQ.open("/hello\0world", :rw) }
+  end
+
+  def test_unlink_with_null_byte
+    assert_raises(ArgumentError) { POSIX_MQ.open("/hello\0world", :rw) }
+  end
+
   def test_gc
     assert_nothing_raised do
       2025.times { POSIX_MQ.new(@path, :rw) }

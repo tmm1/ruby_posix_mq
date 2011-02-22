@@ -346,9 +346,6 @@ static VALUE init(int argc, VALUE *argv, VALUE self)
 
 	rb_scan_args(argc, argv, "13", &name, &oflags, &mode, &attr);
 
-	if (TYPE(name) != T_STRING)
-		rb_raise(rb_eArgError, "name must be a string");
-
 	switch (TYPE(oflags)) {
 	case T_NIL:
 		x.oflags = O_RDONLY;
@@ -375,7 +372,7 @@ static VALUE init(int argc, VALUE *argv, VALUE self)
 		rb_raise(rb_eArgError, "flags must be an int, :r, :w, or :wr");
 	}
 
-	x.name = RSTRING_PTR(name);
+	x.name = StringValueCStr(name);
 	x.argc = 2;
 
 	switch (TYPE(mode)) {
@@ -434,12 +431,8 @@ static VALUE init(int argc, VALUE *argv, VALUE self)
  */
 static VALUE s_unlink(VALUE self, VALUE name)
 {
-	mqd_t rv;
+	mqd_t rv = mq_unlink(StringValueCStr(name));
 
-	if (TYPE(name) != T_STRING)
-		rb_raise(rb_eArgError, "argument must be a string");
-
-	rv = mq_unlink(RSTRING_PTR(name));
 	if (rv == MQD_INVALID)
 		rb_sys_fail("mq_unlink");
 
