@@ -32,7 +32,7 @@
 #  define MQ_IO_MARK(mq) ((void)(0))
 #  define MQ_IO_SET(mq,val) ((void)(0))
 #  define MQ_IO_CLOSE(mq) ((void)(0))
-#  define MQ_IO_NILP(mq) ((void)(1))
+#  define MQ_IO_NIL_P(mq) ((void)(1))
 #endif
 
 struct posix_mq {
