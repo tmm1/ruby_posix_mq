@@ -1,8 +1,9 @@
 # -*- encoding: binary -*-
-cgit_url = "http://git.bogomips.org/cgit/ruby_posix_mq.git"
-git_url = 'git://git.bogomips.org/ruby_posix_mq.git'
+require 'wrongdoc'
+cgit_url = Wrongdoc.config[:cgit_url]
+git_url = Wrongdoc.config[:git_url]
 
-desc "read news article from STDIN and post to rubyforge"
+desc "post news article to rubyforge"
 task :publish_news do
   require 'rubyforge'
   spec = Gem::Specification.load('posix_mq.gemspec')

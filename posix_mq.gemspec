@@ -19,10 +19,9 @@ Gem::Specification.new do |s|
   s.homepage = Wrongdoc.config[:rdoc_url]
   s.summary = summary
   s.rdoc_options = rdoc_options
-  s.require_paths = %w(lib)
   s.rubyforge_project = %q{qrp}
   s.test_files = manifest.grep(%r{\Atest/test_.*\.rb\z})
-  s.add_development_dependency(%q<wrongdoc>, "~> 1.0")
+  s.add_development_dependency(%q<wrongdoc>, "~> 1.5")
 
   # s.licenses = %w(LGPLv3) # accessor not compatible with older RubyGems
 end
