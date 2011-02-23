@@ -32,6 +32,9 @@ network-aware message queue implementations.
 
 * Includes a generic "posix-mq-rb" command-line tool with manpage.
 
+* {EventMachine}[http://rubyeventmachine.com/] integration via
+  {em-posixmq}[https://github.com/ibc/em-posixmq]
+
 == Install
 
 Operating system support (or library emulation) for POSIX message queues
