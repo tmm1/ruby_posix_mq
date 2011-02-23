@@ -36,7 +36,10 @@ class Test_POSIX_MQ < Test::Unit::TestCase
   def test_gc
     assert_nothing_raised do
       2025.times { POSIX_MQ.new(@path, :rw) }
-      2025.times { @mq = POSIX_MQ.new(@path, :rw); @mq.to_io }
+      2025.times {
+        @mq = POSIX_MQ.new(@path, :rw)
+        @mq.to_io if @mq.respond_to?(:to_io)
+      }
     end
   end unless defined?RUBY_ENGINE && RUBY_ENGINE == "rbx"
 
