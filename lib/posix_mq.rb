@@ -40,6 +40,11 @@ class POSIX_MQ
   # know of glibc + Linux supporting this.  Please let us
   # know if your platform can support this functionality and
   # are willing to test for us <ruby.posix.mq@librelist.com>
+  #
+  # As far as we can tell, this method is not very useful
+  # nor efficient.  You would be better served using signals or
+  # just blocking.  On Linux and FreeBSD, you can use POSIX_MQ
+  # with I/O multiplexing (IO.select, EventMachine), too.
   def notify(&block)
     block.arity == 1 or
       raise ArgumentError, "arity of notify block must be 1"
