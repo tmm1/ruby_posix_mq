@@ -96,6 +96,34 @@ class Test_POSIX_MQ < Test::Unit::TestCase
     assert elapsed < 1.10, elapsed.inspect
   end
 
+  def test_alarm_signal_safe
+    alarm = nil
+    libcs = %w(/lib/libc-2.7.so /usr/lib/libc.sl)
+    libcs.each do |libc|
+      if File.readable?(libc)
+        require "dl"
+        libc = DL.dlopen libc
+        alarm = libc["alarm", "II"]
+        break
+      end
+    end
+    alarm or return warn "alarm() not found in #{libcs.inspect}"
+    alarms = 0
+    trap("ALRM") { alarms += 1 }
+    interval = 1
+    alarm[interval]
+    @mq = POSIX_MQ.new(@path, :rw)
+    assert ! @mq.nonblock?
+    t0 = Time.now
+    a = nil
+    assert_raises(Errno::EINTR) { a = @mq.receive }
+    elapsed = Time.now - t0
+    assert_nil a
+    assert elapsed >= interval, elapsed.inspect
+    assert elapsed < 1.10, elapsed.inspect
+    assert_equal 1, alarms
+  end
+
   def test_timed_send
     interval = 0.01
     @mq = POSIX_MQ.new(@path, :rw, 0666, POSIX_MQ::Attr[0, 1, 1, 0])
