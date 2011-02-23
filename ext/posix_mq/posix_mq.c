@@ -133,6 +133,30 @@ struct rw_args {
 	struct timespec *timeout;
 };
 
+#ifndef HAVE_MQ_TIMEDSEND
+static mqd_t
+not_timedsend(mqd_t mqdes, const char *msg_ptr,
+              size_t msg_len, unsigned msg_prio,
+              const struct timespec *abs_timeout)
+{
+	rb_bug("mq_timedsend workaround failed");
+	return (mqd_t)-1;
+}
+#  define mq_timedsend not_timedsend
+#endif
+#ifndef HAVE_MQ_TIMEDRECEIVE
+static ssize_t
+not_timedreceive(mqd_t mqdes, char *msg_ptr,
+                 size_t msg_len, unsigned *msg_prio,
+                 const struct timespec *abs_timeout)
+{
+	rb_bug("mq_timedreceive workaround failed");
+	return (mqd_t)-1;
+}
+#  define mq_timedreceive not_timedreceive
+#endif
+
+#if defined(HAVE_MQ_TIMEDRECEIVE) && defined(HAVE_MQ_TIMEDSEND)
 static void num2timespec(struct timespec *ts, VALUE t)
 {
 	switch (TYPE(t)) {
@@ -174,6 +198,13 @@ static void num2timespec(struct timespec *ts, VALUE t)
 		}
 	}
 }
+#else
+static void num2timespec(struct timespec *ts, VALUE t)
+{
+	rb_raise(rb_eNotImpError,
+	         "mq_timedsend and/or mq_timedreceive missing");
+}
+#endif
 
 static struct timespec *convert_timeout(struct timespec *dest, VALUE t)
 {

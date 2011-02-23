@@ -62,7 +62,7 @@ class Test_POSIX_MQ < Test::Unit::TestCase
     @mq = POSIX_MQ.new(@path, :rw)
     assert ! @mq.nonblock?
     t0 = Time.now
-    assert_raises(Errno::ETIMEDOUT) { @mq.receive "", interval }
+    maybe_timeout { @mq.receive "", interval } or return
     elapsed = Time.now - t0
     assert elapsed > interval, elapsed.inspect
     assert elapsed < 0.02, elapsed.inspect
@@ -76,7 +76,7 @@ class Test_POSIX_MQ < Test::Unit::TestCase
     @mq = POSIX_MQ.new(@path, :rw)
     assert ! @mq.nonblock?
     t0 = Time.now
-    assert_raises(Errno::ETIMEDOUT) { @mq.receive "", interval }
+    maybe_timeout { @mq.receive "", interval } or return
     elapsed = Time.now - t0
     assert elapsed >= 0.01, elapsed.inspect
     assert elapsed <= 0.02, elapsed.inspect
@@ -87,7 +87,7 @@ class Test_POSIX_MQ < Test::Unit::TestCase
     @mq = POSIX_MQ.new(@path, :rw)
     assert ! @mq.nonblock?
     t0 = Time.now
-    assert_raises(Errno::ETIMEDOUT) { @mq.receive "", interval }
+    maybe_timeout { @mq.receive "", interval } or return
     elapsed = Time.now - t0
     assert elapsed >= interval, elapsed.inspect
     assert elapsed < 1.10, elapsed.inspect
@@ -97,9 +97,15 @@ class Test_POSIX_MQ < Test::Unit::TestCase
     interval = 0.01
     @mq = POSIX_MQ.new(@path, :rw, 0666, POSIX_MQ::Attr[0, 1, 1, 0])
     assert ! @mq.nonblock?
-    assert_nothing_raised { @mq.send "A", 1, interval }
+    assert_nothing_raised {
+      begin
+        @mq.send "A", 1, interval
+      rescue NotImplementedError
+        return
+      end
+    }
     t0 = Time.now
-    assert_raises(Errno::ETIMEDOUT) { @mq.send "B", 1, interval }
+    maybe_timeout { @mq.send "B", 1, interval } or return
     elapsed = Time.now - t0
     assert elapsed > interval
   end
@@ -343,5 +349,16 @@ class Test_POSIX_MQ < Test::Unit::TestCase
     @mq = POSIX_MQ.new @path, IO::CREAT|IO::WRONLY, 0666
     assert_raises(TypeError) { @mq.attr = {} }
     assert_raises(TypeError) { @mq.attr = Struct.new(:a,:b,:c,:d).new }
+  end
+
+  def maybe_timeout
+    yield
+    assert_raises(exc) { } # FAIL
+    return true
+    rescue Errno::ETIMEDOUT => e
+      return true
+    rescue NotImplementedError => e
+      warn "E: #{e}"
+      return false
   end
 end

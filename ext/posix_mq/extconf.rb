@@ -10,4 +10,7 @@ have_func('rb_thread_blocking_region')
 have_library("m")
 have_library("rt")
 have_library("pthread")
+
+have_func("mq_timedsend")
+have_func("mq_timedreceive")
 create_makefile("posix_mq_ext")
