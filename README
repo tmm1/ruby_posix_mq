@@ -89,13 +89,13 @@ from processes that receive.
 
 You can get the latest source via git from the following locations:
 
-  git://git.bogomips.org/ruby_posix_mq.git
+  git://bogomips.org/ruby_posix_mq.git
   git://repo.or.cz/ruby_posix_mq.git (mirror)
 
 You may browse the code from the web and download the latest snapshot
 tarballs here:
 
-* http://git.bogomips.org/cgit/ruby_posix_mq.git (cgit)
+* http://bogomips.org/ruby_posix_mq.git (cgit)
 * http://repo.or.cz/w/ruby_posix_mq.git (gitweb)
 
 Inline patches (from "git format-patch") to the mailing list are
