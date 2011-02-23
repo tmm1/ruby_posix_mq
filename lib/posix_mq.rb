@@ -12,19 +12,16 @@ class POSIX_MQ
   # See the mq_getattr(3) manpage for more information on the values.
   Attr = Struct.new(:flags, :maxmsg, :msgsize, :curmsgs)
 
-  class << self
-
-    # Opens a POSIX message queue and performs operations on the
-    # given block, closing the message queue at exit.
-    # All all arguments are passed to POSIX_MQ.new.
-    def open(*args)
-      mq = new(*args)
-      block_given? or return mq
-      begin
-        yield mq
-      ensure
-        mq.close unless mq.closed?
-      end
+  # Opens a POSIX message queue and performs operations on the
+  # given block, closing the message queue at exit.
+  # All all arguments are passed to POSIX_MQ.new.
+  def self.open(*args)
+    mq = new(*args)
+    block_given? or return mq
+    begin
+      yield mq
+    ensure
+      mq.close unless mq.closed?
     end
   end
 
