@@ -64,7 +64,7 @@ kernel module before attempting to use POSIX message queues:
 
     kldload mqueuefs
 
-Our API matches the C api closely, see the RDoc for full API
+Our API matches the POSIX C API closely, see the RDoc for full API
 documentation.  Here is an example of a process communicating
 with itself.  In practice, processes that send will be different
 from processes that receive.

@@ -1,4 +1,9 @@
 # -*- encoding: binary -*-
+#
+# This class represents an POSIX message queue descriptor (mqd_t)
+# object.  It matches the C API for POSIX messages queues closely.
+#
+# See the link:README for examples on how to use it.
 class POSIX_MQ
 
   # version of POSIX_MQ, currently 0.6.0
