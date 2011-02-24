@@ -4,6 +4,7 @@ require 'posix_mq'
 require 'thread'
 require 'fcntl'
 $stderr.sync = $stdout.sync = true
+require "dl"
 
 class Test_POSIX_MQ < Test::Unit::TestCase
 
@@ -97,24 +98,17 @@ class Test_POSIX_MQ < Test::Unit::TestCase
   end
 
   def test_alarm_signal_safe
-    alarm = nil
-    libcs = %w(/lib/libc-2.7.so /usr/lib/libc.sl)
-    libcs.each do |libc|
-      if File.readable?(libc)
-        require "dl"
-        begin
-          require "fiddle"
-        rescue LoadError
-        end
-        libc = DL.dlopen libc
-        if defined?(Fiddle)
-          alarm = libc["alarm"]
-          alarm = Fiddle::Function.new(alarm, [DL::TYPE_INT], DL::TYPE_INT)
-        else
-          alarm = libc["alarm", "II"]
-        end
-        break
+    libc = alarm = nil
+    libcs = %w(libc.so.6 /usr/lib/libc.sl)
+    libcs.each do |name|
+      libc = DL::Handle.new(name) rescue next
+      if defined?(Fiddle)
+        alarm = libc["alarm"]
+        alarm = Fiddle::Function.new(alarm, [DL::TYPE_INT], DL::TYPE_INT)
+      else
+        alarm = libc["alarm", "II"]
       end
+      break
     end
     alarm or return warn "alarm() not found in #{libcs.inspect}"
     alarms = 0
