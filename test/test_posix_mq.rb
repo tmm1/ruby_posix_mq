@@ -102,8 +102,17 @@ class Test_POSIX_MQ < Test::Unit::TestCase
     libcs.each do |libc|
       if File.readable?(libc)
         require "dl"
+        begin
+          require "fiddle"
+        rescue LoadError
+        end
         libc = DL.dlopen libc
-        alarm = libc["alarm", "II"]
+        if defined?(Fiddle)
+          alarm = libc["alarm"]
+          alarm = Fiddle::Function.new(alarm, [DL::TYPE_INT], DL::TYPE_INT)
+        else
+          alarm = libc["alarm", "II"]
+        end
         break
       end
     end
@@ -111,7 +120,7 @@ class Test_POSIX_MQ < Test::Unit::TestCase
     alarms = 0
     trap("ALRM") { alarms += 1 }
     interval = 1
-    alarm[interval]
+    alarm.call interval
     @mq = POSIX_MQ.new(@path, :rw)
     assert ! @mq.nonblock?
     t0 = Time.now
