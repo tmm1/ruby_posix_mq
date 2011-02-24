@@ -108,12 +108,16 @@ the patch.
 We will adhere to mostly the same conventions for patch submissions as
 git itself.  See the Documentation/SubmittingPatches document
 distributed with git on on patch submission guidelines to follow.  Just
-don't email the git mailing list or maintainer with posix_mq patches.
+don't email the git mailing list or maintainer with Ruby posix_mq patches.
 
 == Contact
 
 All feedback (bug reports, user/development discussion, patches, pull
 requests) go to the mailing list: mailto:ruby.posix.mq@librelist.com
+
+Send patches (from "git format-patch") with "git send-email" and do not
+send HTML email or attachments.  We are very responsive to email and you
+will usually get a response within 24-72 hours.
 
 == Mailing List Archives
 
