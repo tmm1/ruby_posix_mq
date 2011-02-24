@@ -27,5 +27,6 @@ man html:
 pkg_extra += $(man1_paths)
 
 doc::
+	install -m644 COPYING-GPL2 doc/COPYING-GPL2
 	$(RM) $(man1_rdoc)
 .PHONY: man html
