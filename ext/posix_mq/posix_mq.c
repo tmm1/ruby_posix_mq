@@ -510,6 +510,9 @@ static void setup_send_buffer(struct rw_args *x, VALUE buffer)
  * then Errno::ETIMEDOUT will be raised if the operation cannot complete
  * before +timeout+ seconds has elapsed.  Without +timeout+, this method
  * may block until the queue is writable.
+ *
+ * On some older systems, the +timeout+ argument is not currently
+ * supported and may raise NotImplementedError if +timeout+ is used.
  */
 static VALUE _send(int argc, VALUE *argv, VALUE self)
 {
@@ -604,6 +607,9 @@ static VALUE _receive(int wantarray, int argc, VALUE *argv, VALUE self);
  * or Integer specifying the timeout in seconds.  Errno::ETIMEDOUT
  * will be raised if +timeout+ has elapsed and there are no messages
  * in the queue.
+ *
+ * On some older systems, the +timeout+ argument is not currently
+ * supported and may raise NotImplementedError if +timeout+ is used.
  */
 static VALUE receive(int argc, VALUE *argv, VALUE self)
 {
@@ -624,6 +630,9 @@ static VALUE receive(int argc, VALUE *argv, VALUE self)
  * or Integer specifying the timeout in seconds.  Errno::ETIMEDOUT
  * will be raised if +timeout+ has elapsed and there are no messages
  * in the queue.
+ *
+ * On some older systems, the +timeout+ argument is not currently
+ * supported and may raise NotImplementedError if +timeout+ is used.
  */
 static VALUE shift(int argc, VALUE *argv, VALUE self)
 {
