@@ -5,6 +5,10 @@ require 'thread'
 require 'fcntl'
 $stderr.sync = $stdout.sync = true
 require "dl"
+begin
+  require "dl/func"
+rescue LoadError
+end
 
 class Test_POSIX_MQ < Test::Unit::TestCase
 
@@ -102,9 +106,10 @@ class Test_POSIX_MQ < Test::Unit::TestCase
     libcs = %w(libc.so.6 /usr/lib/libc.sl)
     libcs.each do |name|
       libc = DL::Handle.new(name) rescue next
-      if defined?(Fiddle)
+      if defined?(DL::Function)
         alarm = libc["alarm"]
-        alarm = Fiddle::Function.new(alarm, [DL::TYPE_INT], DL::TYPE_INT)
+        alarm = DL::CFunc.new(alarm, DL::TYPE_INT, "alarm")
+        alarm = DL::Function.new(alarm, [DL::TYPE_INT], DL::TYPE_INT)
       else
         alarm = libc["alarm", "II"]
       end
