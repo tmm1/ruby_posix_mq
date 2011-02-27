@@ -101,14 +101,14 @@ begin
     exit
   when :receive
     buf, prio = mq.receive("", timeout)
-    $stderr.syswrite("priority=#{prio}\n") if priority
-    $stdout.syswrite(buf)
+    $stderr.write("priority=#{prio}\n") if priority
+    $stdout.write(buf)
   when :send
     ARGV << $stdin.read if ARGV.empty?
     ARGV.each { |msg| mq.send(msg, priority, timeout) }
   when :attr
     mq_attr = mq.attr
-    $stdout.syswrite(
+    $stdout.write(
       "flags=#{mq_attr.flags}\n" \
       "maxmsg=#{mq_attr.maxmsg}\n" \
       "msgsize=#{mq_attr.msgsize}\n" \
