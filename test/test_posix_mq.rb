@@ -1,6 +1,5 @@
 # -*- encoding: binary -*-
 require 'test/unit'
-require 'posix_mq'
 require 'thread'
 require 'fcntl'
 $stderr.sync = $stdout.sync = true
@@ -9,6 +8,8 @@ begin
   require "dl/func"
 rescue LoadError
 end
+$-w = true
+require 'posix_mq'
 
 class Test_POSIX_MQ < Test::Unit::TestCase
 
@@ -402,7 +403,7 @@ class Test_POSIX_MQ < Test::Unit::TestCase
   end if POSIX_MQ.method_defined?(:notify)
 
   def test_bad_open_mode
-    assert_raises(ArgumentError) { mq = POSIX_MQ.new(@path, "rw") }
+    assert_raises(ArgumentError) { POSIX_MQ.new(@path, "rw") }
   end
 
   def test_bad_open_attr
