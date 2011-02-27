@@ -1,7 +1,9 @@
 #!/usr/bin/env ruby
 # -*- encoding: binary -*-
-Encoding.default_external = Encoding::BINARY if defined?(Encoding)
 $stderr.sync = $stdout.sync = true
+$stdout.binmode
+$stderr.binmode
+$stdin.binmode
 
 require 'posix_mq'
 require 'optparse'
@@ -70,7 +72,7 @@ ARGV.options do |x|
       }
     end
   end
-  x.on('-q', "quiet warnings and errors") { $stderr.reopen("/dev/null", "w") }
+  x.on('-q', "quiet warnings and errors") { $stderr.reopen("/dev/null", "wb") }
   x.on('-h', '--help', 'Show this help message.') { puts x; exit }
   x.parse!
 end
