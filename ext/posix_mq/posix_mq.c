@@ -438,7 +438,11 @@ static VALUE init(int argc, VALUE *argv, VALUE self)
 
 	mq->des = (mqd_t)xopen(&x);
 	if (mq->des == MQD_INVALID) {
-		if (errno == ENOMEM || errno == EMFILE || errno == ENFILE) {
+		switch (errno) {
+		case ENOMEM:
+		case EMFILE:
+		case ENFILE:
+		case ENOSPC:
 			rb_gc();
 			mq->des = (mqd_t)xopen(&x);
 		}
