@@ -280,6 +280,17 @@ class Test_POSIX_MQ < Test::Unit::TestCase
     assert_equal 0, @mq.attr.flags
   end
 
+  def test_setattr_fork
+    @mq = POSIX_MQ.new @path, IO::CREAT|IO::WRONLY, 0666
+    mq_attr = POSIX_MQ::Attr.new(IO::NONBLOCK)
+    @mq.attr = mq_attr
+    assert @mq.nonblock?
+
+    pid = fork { @mq.nonblock = false }
+    assert Process.waitpid2(pid)[1].success?
+    assert ! @mq.nonblock?
+  end
+
   def test_new_nonblocking
     @mq = POSIX_MQ.new @path, IO::CREAT|IO::WRONLY|IO::NONBLOCK, 0666
     assert @mq.nonblock?

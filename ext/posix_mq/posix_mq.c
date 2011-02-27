@@ -529,11 +529,7 @@ static VALUE _send(int argc, VALUE *argv, VALUE self)
 	x.timeout = convert_timeout(&expire, timeout);
 	x.msg_prio = NIL_P(prio) ? 0 : NUM2UINT(prio);
 
-	if (mq->attr.mq_flags & O_NONBLOCK)
-		rv = (mqd_t)xsend(&x);
-	else
-		rv = (mqd_t)rb_thread_blocking_region(xsend, &x,
-		                                      RUBY_UBF_IO, 0);
+	rv = (mqd_t)rb_thread_blocking_region(xsend, &x, RUBY_UBF_IO, 0);
 	if (rv == MQD_INVALID)
 		rb_sys_fail("mq_send");
 
@@ -558,12 +554,7 @@ static VALUE send0(VALUE self, VALUE buffer)
 	x.timeout = NULL;
 	x.msg_prio = 0;
 
-	if (mq->attr.mq_flags & O_NONBLOCK)
-		rv = (mqd_t)xsend(&x);
-	else
-		rv = (mqd_t)rb_thread_blocking_region(xsend, &x,
-		                                      RUBY_UBF_IO, 0);
-
+	rv = (mqd_t)rb_thread_blocking_region(xsend, &x, RUBY_UBF_IO, 0);
 	if (rv == MQD_INVALID)
 		rb_sys_fail("mq_send");
 
@@ -667,12 +658,7 @@ static VALUE _receive(int wantarray, int argc, VALUE *argv, VALUE self)
 	x.msg_len = (size_t)mq->attr.mq_msgsize;
 	x.des = mq->des;
 
-	if (mq->attr.mq_flags & O_NONBLOCK) {
-		r = (ssize_t)xrecv(&x);
-	} else {
-		r = (ssize_t)rb_thread_blocking_region(xrecv, &x,
-		                                       RUBY_UBF_IO, 0);
-	}
+	r = (ssize_t)rb_thread_blocking_region(xrecv, &x, RUBY_UBF_IO, 0);
 	if (r < 0)
 		rb_sys_fail("mq_receive");
 
@@ -940,10 +926,12 @@ static VALUE setnotify(VALUE self, VALUE arg)
  *
  * Returns the current non-blocking state of the message queue descriptor.
  */
-static VALUE getnonblock(VALUE self)
+static VALUE nonblock_p(VALUE self)
 {
 	struct posix_mq *mq = get(self, 1);
 
+	if (mq_getattr(mq->des, &mq->attr) < 0)
+		rb_sys_fail("mq_getattr");
 	return mq->attr.mq_flags & O_NONBLOCK ? Qtrue : Qfalse;
 }
 
@@ -1017,7 +1005,7 @@ void Init_posix_mq_ext(void)
 	rb_define_method(cPOSIX_MQ, "nonblock=", setnonblock, 1);
 	rb_define_method(cPOSIX_MQ, "notify_exec", setnotify_exec, 2);
 	rb_define_method(cPOSIX_MQ, "notify_cleanup", notify_cleanup, 0);
-	rb_define_method(cPOSIX_MQ, "nonblock?", getnonblock, 0);
+	rb_define_method(cPOSIX_MQ, "nonblock?", nonblock_p, 0);
 #ifdef MQD_TO_FD
 	rb_define_method(cPOSIX_MQ, "to_io", to_io, 0);
 #endif
