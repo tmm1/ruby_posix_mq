@@ -65,7 +65,7 @@ static int MQ_IO_CLOSE(struct posix_mq *mq)
 static VALUE cPOSIX_MQ, cAttr;
 static ID id_new, id_kill, id_fileno, id_mul, id_divmod;
 static ID id_flags, id_maxmsg, id_msgsize, id_curmsgs;
-static ID sym_r, sym_w, sym_rw;
+static VALUE sym_r, sym_w, sym_rw;
 static const mqd_t MQD_INVALID = (mqd_t)-1;
 
 /* Ruby 1.8.6+ macros (for compatibility with Ruby 1.9) */
