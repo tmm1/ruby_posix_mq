@@ -356,6 +356,20 @@ class Test_POSIX_MQ < Test::Unit::TestCase
     assert_raises(Errno::EAGAIN) { @mq << '.' }
   end
 
+  def test_try
+    mq_attr = POSIX_MQ::Attr.new(IO::NONBLOCK, 1, 1, 0)
+    @mq = POSIX_MQ.new @path, IO::CREAT|IO::RDWR, 0666, mq_attr
+
+    assert_nil @mq.tryreceive
+    assert_nil @mq.tryshift
+    assert_equal true, @mq.trysend("a")
+    assert_equal [ "a", 0 ], @mq.tryreceive
+    assert_equal true, @mq.trysend("b")
+    assert_equal "b", @mq.tryshift
+    assert_equal true, @mq.trysend("c")
+    assert_equal false, @mq.trysend("d")
+  end
+
   def test_prio_max
     min_posix_mq_prio_max = 31 # defined by POSIX
     assert POSIX_MQ::PRIO_MAX >= min_posix_mq_prio_max
