@@ -62,7 +62,7 @@ static int MQ_IO_CLOSE(struct posix_mq *mq)
 }
 #endif
 
-static VALUE cPOSIX_MQ, cAttr;
+static VALUE cAttr;
 static ID id_new, id_kill, id_fileno, id_mul, id_divmod;
 static ID id_flags, id_maxmsg, id_msgsize, id_curmsgs;
 static VALUE sym_r, sym_w, sym_rw;
@@ -970,7 +970,7 @@ static VALUE setnonblock(VALUE self, VALUE nb)
 
 void Init_posix_mq_ext(void)
 {
-	cPOSIX_MQ = rb_define_class("POSIX_MQ", rb_cObject);
+	VALUE cPOSIX_MQ = rb_define_class("POSIX_MQ", rb_cObject);
 	rb_define_alloc_func(cPOSIX_MQ, alloc);
 	cAttr = rb_const_get(cPOSIX_MQ, rb_intern("Attr"));
 
