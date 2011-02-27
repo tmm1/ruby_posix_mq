@@ -6,11 +6,6 @@
 # See the link:README for examples on how to use it.
 class POSIX_MQ
 
-  # version of POSIX_MQ, currently 0.7.0
-  # This constant is deprecated and will be removed in the next
-  # release.  Use +respond_to?+ instead to test for features.
-  VERSION = "0.7.0"
-
   # An analogous Struct to "struct mq_attr" in C.
   # This may be used in arguments for POSIX_MQ.new and
   # POSIX_MQ#attr=.  POSIX_MQ#attr returns an instance
