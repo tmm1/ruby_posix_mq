@@ -996,10 +996,14 @@ static VALUE tryinit(int argc, VALUE *argv, VALUE self)
  *	mq.trysend(string [,priority[, timeout]]) => +true+ or +false+
  *
  * Exactly like POSIX_MQ#send, except it returns +false+ instead of raising
- * +Errno::EAGAIN+ when non-blocking operation is desired and returns +true+
+ * Errno::EAGAIN when non-blocking operation is desired and returns +true+
  * on success instead of +nil+.
+ *
  * This does not guarantee non-blocking behavior, the message queue must
  * be made non-blocking before calling this method.
+ *
+ * This interface first appeared 0.8.0pre and is not yet final,
+ * please email ruby.posix.mq@librelist.org to discuss.
  */
 static VALUE trysend(int argc, VALUE *argv, VALUE self)
 {
@@ -1011,10 +1015,13 @@ static VALUE trysend(int argc, VALUE *argv, VALUE self)
  *	mq.tryshift([buffer [, timeout]])	=> message or nil
  *
  * Exactly like POSIX_MQ#shift, except it returns +nil+ instead of raising
- * +Errno::EAGAIN+ when non-blocking operation is desired.
+ * Errno::EAGAIN when non-blocking operation is desired.
  *
  * This does not guarantee non-blocking behavior, the message queue must
  * be made non-blocking before calling this method.
+ *
+ * This interface first appeared 0.8.0pre and is not yet final,
+ * please email ruby.posix.mq@librelist.org to discuss.
  */
 static VALUE tryshift(int argc, VALUE *argv, VALUE self)
 {
@@ -1026,10 +1033,13 @@ static VALUE tryshift(int argc, VALUE *argv, VALUE self)
  *	mq.tryreceive([buffer [, timeout]])	=> [ message, priority ] or nil
  *
  * Exactly like POSIX_MQ#receive, except it returns +nil+ instead of raising
- * +Errno::EAGAIN+ when non-blocking operation is desired.
+ * Errno::EAGAIN when non-blocking operation is desired.
  *
  * This does not guarantee non-blocking behavior, the message queue must
  * be made non-blocking before calling this method.
+ *
+ * This interface first appeared 0.8.0pre and is not yet final,
+ * please email ruby.posix.mq@librelist.org to discuss.
  */
 static VALUE tryreceive(int argc, VALUE *argv, VALUE self)
 {
