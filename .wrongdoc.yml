@@ -4,4 +4,4 @@ cgit_url: http://bogomips.org/ruby_posix_mq.git
 git_url: git://bogomips.org/ruby_posix_mq.git
 changelog_since: 0.4.0
 merge_html:
-  posix-mq-rb_1: Documentation/posix-mq.rb.1.html
+  posix-mq-rb_1: Documentation/posix-mq-rb.1.html
