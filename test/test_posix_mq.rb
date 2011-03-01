@@ -155,7 +155,7 @@ class Test_POSIX_MQ < Test::Unit::TestCase
       @mq = mq
       assert mq.kind_of?(POSIX_MQ)
       assert_equal @path, mq.name
-      assert_nil mq.send("HI", 0)
+      assert_equal true, mq.send("HI", 0)
       assert_equal 1, mq.attr.curmsgs
       assert_nil mq.close
       assert_raises(IOError) { mq.close }
@@ -208,21 +208,21 @@ class Test_POSIX_MQ < Test::Unit::TestCase
 
   def test_send_receive
     @mq = POSIX_MQ.new @path, IO::CREAT|IO::RDWR, 0666
-    assert_nil @mq.send("hello", 0)
+    assert_equal true, @mq.send("hello", 0)
     assert_equal [ "hello", 0 ], @mq.receive
   end
 
   def test_send_receive_buf
     buf = ""
     @mq = POSIX_MQ.new @path, IO::CREAT|IO::RDWR, 0666
-    assert_nil @mq.send("hello", 0)
+    assert_equal true, @mq.send("hello", 0)
     assert_equal [ "hello", 0 ], @mq.receive(buf)
     assert_equal "hello", buf
   end
 
   def test_send_receive_prio
     @mq = POSIX_MQ.new @path, IO::CREAT|IO::RDWR, 0666
-    assert_nil @mq.send("hello", 2)
+    assert_equal true, @mq.send("hello", 2)
     assert_equal [ "hello", 2 ], @mq.receive
   end
 

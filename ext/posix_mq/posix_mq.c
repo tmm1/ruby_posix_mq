@@ -509,9 +509,10 @@ static void setup_send_buffer(struct rw_args *x, VALUE buffer)
 }
 
 static VALUE _send(int sflags, int argc, VALUE *argv, VALUE self);
+
 /*
  * call-seq:
- *	mq.send(string [,priority[, timeout]])	=> nil
+ *	mq.send(string [,priority[, timeout]])	=> true
  *
  * Inserts the given +string+ into the message queue with an optional,
  * unsigned integer +priority+.  If the optional +timeout+ is specified,
@@ -524,7 +525,7 @@ static VALUE _send(int sflags, int argc, VALUE *argv, VALUE self);
  */
 static VALUE my_send(int argc, VALUE *argv, VALUE self)
 {
-	_send(0, argc, argv, self);
+	return _send(0, argc, argv, self);
 }
 
 static VALUE _send(int sflags, int argc, VALUE *argv, VALUE self)
@@ -549,7 +550,7 @@ static VALUE _send(int sflags, int argc, VALUE *argv, VALUE self)
 		rb_sys_fail("mq_send");
 	}
 
-	return (sflags & PMQ_TRY) ? Qtrue : Qnil;
+	return Qtrue;
 }
 
 /*
@@ -558,6 +559,10 @@ static VALUE _send(int sflags, int argc, VALUE *argv, VALUE self)
  *
  * Inserts the given +string+ into the message queue with a
  * default priority of 0 and no timeout.
+ *
+ * Returns itself so its calls may be chained.  This use is only
+ * recommended only for users who expect blocking behavior from
+ * the queue.
  */
 static VALUE send0(VALUE self, VALUE buffer)
 {
