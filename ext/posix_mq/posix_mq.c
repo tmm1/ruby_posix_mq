@@ -988,14 +988,6 @@ static VALUE setnonblock(VALUE self, VALUE nb)
 	return nb;
 }
 
-static VALUE tryinit(int argc, VALUE *argv, VALUE self)
-{
-	init(argc, argv, self);
-	setnonblock(self, Qtrue);
-
-	return self;
-}
-
 /*
  * call-seq:
  *	mq.trysend(string [,priority[, timeout]]) => +true+ or +false+
