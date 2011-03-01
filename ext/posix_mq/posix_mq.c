@@ -1060,7 +1060,7 @@ void Init_posix_mq_ext(void)
 
 	rb_define_singleton_method(cPOSIX_MQ, "unlink", s_unlink, 1);
 
-	rb_define_method(cPOSIX_MQ, "initialize", init, -1);
+	rb_define_private_method(cPOSIX_MQ, "initialize", init, -1);
 	rb_define_method(cPOSIX_MQ, "send", my_send, -1);
 	rb_define_method(cPOSIX_MQ, "<<", send0, 1);
 	rb_define_method(cPOSIX_MQ, "trysend", trysend, -1);
@@ -1076,8 +1076,8 @@ void Init_posix_mq_ext(void)
 	rb_define_method(cPOSIX_MQ, "name", name, 0);
 	rb_define_method(cPOSIX_MQ, "notify=", setnotify, 1);
 	rb_define_method(cPOSIX_MQ, "nonblock=", setnonblock, 1);
-	rb_define_method(cPOSIX_MQ, "notify_exec", setnotify_exec, 2);
-	rb_define_method(cPOSIX_MQ, "notify_cleanup", notify_cleanup, 0);
+	rb_define_private_method(cPOSIX_MQ, "notify_exec", setnotify_exec, 2);
+	rb_define_private_method(cPOSIX_MQ, "notify_cleanup", notify_cleanup, 0);
 	rb_define_method(cPOSIX_MQ, "nonblock?", nonblock_p, 0);
 #ifdef MQD_TO_FD
 	rb_define_method(cPOSIX_MQ, "to_io", to_io, 0);
