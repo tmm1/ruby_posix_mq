@@ -66,7 +66,7 @@ static int MQ_IO_CLOSE(struct posix_mq *mq)
 # define PMQ_TRY       (1<<1)
 
 static VALUE cAttr;
-static ID id_new, id_kill, id_fileno, id_mul, id_divmod;
+static ID id_new, id_kill, id_fileno, id_divmod;
 static ID id_flags, id_maxmsg, id_msgsize, id_curmsgs;
 static VALUE sym_r, sym_w, sym_rw;
 static const mqd_t MQD_INVALID = (mqd_t)-1;
@@ -196,7 +196,7 @@ static void num2timespec(struct timespec *ts, VALUE t)
 
 		ts->tv_sec = NUM2TIMET(rb_ary_entry(ary, 0));
 		f = rb_ary_entry(ary, 1);
-		f = rb_funcall(f, id_mul, 1, INT2FIX(1000000000));
+		f = rb_funcall(f, '*', 1, INT2FIX(1000000000));
 		ts->tv_nsec = NUM2LONG(f);
 		}
 	}
@@ -1086,7 +1086,6 @@ void Init_posix_mq_ext(void)
 	id_new = rb_intern("new");
 	id_kill = rb_intern("kill");
 	id_fileno = rb_intern("fileno");
-	id_mul = rb_intern("*");
 	id_divmod = rb_intern("divmod");
 	id_flags = rb_intern("flags");
 	id_maxmsg = rb_intern("maxmsg");
