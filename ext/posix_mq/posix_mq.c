@@ -185,7 +185,6 @@ static void num2timespec(struct timespec *ts, VALUE t)
 		ts->tv_sec = (time_t)f;
 		if (f != ts->tv_sec)
 			rb_raise(rb_eRangeError, "%f out of range", val);
-		ts->tv_sec = (time_t)f;
 		}
 		break;
 	default: {
