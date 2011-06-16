@@ -703,7 +703,6 @@ static VALUE _receive(int rflags, int argc, VALUE *argv, VALUE self)
 static VALUE getattr(VALUE self)
 {
 	struct posix_mq *mq = get(self, 1);
-	VALUE astruct;
 
 	if (mq_getattr(mq->des, &mq->attr) < 0)
 		rb_sys_fail("mq_getattr");
@@ -1000,7 +999,7 @@ static VALUE setnonblock(VALUE self, VALUE nb)
  */
 static VALUE trysend(int argc, VALUE *argv, VALUE self)
 {
-	_send(PMQ_TRY, argc, argv, self);
+	return _send(PMQ_TRY, argc, argv, self);
 }
 
 /*
