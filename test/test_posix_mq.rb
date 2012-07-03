@@ -110,7 +110,7 @@ class Test_POSIX_MQ < Test::Unit::TestCase
       if defined?(DL::Function)
         alarm = libc["alarm"]
         alarm = DL::CFunc.new(alarm, DL::TYPE_INT, "alarm")
-        alarm = DL::Function.new(alarm, [DL::TYPE_INT], DL::TYPE_INT)
+        alarm = DL::Function.new(alarm, [DL::TYPE_INT])
       else
         alarm = libc["alarm", "II"]
       end
