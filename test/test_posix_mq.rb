@@ -104,7 +104,7 @@ class Test_POSIX_MQ < Test::Unit::TestCase
 
   def test_alarm_signal_safe
     libc = alarm = nil
-    libcs = %w(libc.so.6 /usr/lib/libc.sl)
+    libcs = %w(libc.so.6 libc.so.0.1 libc.so.7 /usr/lib/libc.sl)
     libcs.each do |name|
       libc = DL::Handle.new(name) rescue next
       if defined?(DL::Function)
