@@ -118,16 +118,18 @@ class Test_POSIX_MQ < Test::Unit::TestCase
     end
     alarm or return warn "alarm() not found in #{libcs.inspect}"
     alarms = 0
-    trap("ALRM") { alarms += 1 }
+    trap("ALRM") do
+      alarms += 1
+      Thread.new { @mq.send("HI") }
+    end
     interval = 1
     alarm.call interval
     @mq = POSIX_MQ.new(@path, :rw)
     assert ! @mq.nonblock?
     t0 = Time.now
-    a = nil
-    assert_raises(Errno::EINTR) { a = @mq.receive }
+    a = @mq.receive
     elapsed = Time.now - t0
-    assert_nil a
+    assert_equal(["HI", 0], a)
     assert elapsed >= interval, elapsed.inspect
     assert elapsed < 1.10, elapsed.inspect
     assert_equal 1, alarms

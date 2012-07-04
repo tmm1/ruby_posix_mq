@@ -542,8 +542,11 @@ static VALUE _send(int sflags, int argc, VALUE *argv, VALUE self)
 	x.timeout = convert_timeout(&expire, timeout);
 	x.msg_prio = NIL_P(prio) ? 0 : NUM2UINT(prio);
 
+retry:
 	rv = (mqd_t)rb_thread_blocking_region(xsend, &x, RUBY_UBF_IO, 0);
 	if (rv == MQD_INVALID) {
+		if (errno == EINTR)
+			goto retry;
 		if (errno == EAGAIN && (sflags & PMQ_TRY))
 			return Qfalse;
 		rb_sys_fail("mq_send");
@@ -574,9 +577,13 @@ static VALUE send0(VALUE self, VALUE buffer)
 	x.timeout = NULL;
 	x.msg_prio = 0;
 
+retry:
 	rv = (mqd_t)rb_thread_blocking_region(xsend, &x, RUBY_UBF_IO, 0);
-	if (rv == MQD_INVALID)
+	if (rv == MQD_INVALID) {
+		if (errno == EINTR)
+			goto retry;
 		rb_sys_fail("mq_send");
+	}
 
 	return self;
 }
@@ -678,8 +685,11 @@ static VALUE _receive(int rflags, int argc, VALUE *argv, VALUE self)
 	x.msg_len = (size_t)mq->attr.mq_msgsize;
 	x.des = mq->des;
 
+retry:
 	r = (ssize_t)rb_thread_blocking_region(xrecv, &x, RUBY_UBF_IO, 0);
 	if (r < 0) {
+		if (errno == EINTR)
+			goto retry;
 		if (errno == EAGAIN && (rflags & PMQ_TRY))
 			return Qnil;
 		rb_sys_fail("mq_receive");
