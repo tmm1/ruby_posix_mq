@@ -73,8 +73,8 @@ class Test_POSIX_MQ < Test::Unit::TestCase
     t0 = Time.now
     maybe_timeout { @mq.receive "", interval } or return
     elapsed = Time.now - t0
-    assert elapsed > interval, elapsed.inspect
-    assert elapsed < 0.02, elapsed.inspect
+    assert_operator elapsed, :>, interval, elapsed.inspect
+    assert_operator elapsed, :<, 0.04, elapsed.inspect
   end
 
   def test_timed_receive_divmod
@@ -87,8 +87,8 @@ class Test_POSIX_MQ < Test::Unit::TestCase
     t0 = Time.now
     maybe_timeout { @mq.receive "", interval } or return
     elapsed = Time.now - t0
-    assert elapsed >= 0.01, elapsed.inspect
-    assert elapsed <= 0.02, elapsed.inspect
+    assert_operator elapsed, :>=, 0.01, elapsed.inspect
+    assert_operator elapsed, :<=, 0.04, elapsed.inspect
   end
 
   def test_timed_receive_fixnum
