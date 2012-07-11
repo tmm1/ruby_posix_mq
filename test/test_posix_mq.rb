@@ -257,7 +257,7 @@ class Test_POSIX_MQ < Test::Unit::TestCase
     assert_nil IO.select([rd], nil, nil, 0.1)
     ensure
       trap(:USR1, orig)
-  end
+  end if POSIX_MQ.method_defined?(:to_io)
 
   def test_notify_none
     @mq = POSIX_MQ.new @path, IO::CREAT|IO::RDWR, 0666
