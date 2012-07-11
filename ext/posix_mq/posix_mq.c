@@ -468,9 +468,9 @@ static VALUE init(int argc, VALUE *argv, VALUE self)
  */
 static VALUE s_unlink(VALUE self, VALUE name)
 {
-	mqd_t rv = mq_unlink(StringValueCStr(name));
+	int rv = mq_unlink(StringValueCStr(name));
 
-	if (rv == MQD_INVALID)
+	if (rv == -1)
 		rb_sys_fail("mq_unlink");
 
 	return INT2NUM(1);
@@ -489,12 +489,12 @@ static VALUE s_unlink(VALUE self, VALUE name)
 static VALUE _unlink(VALUE self)
 {
 	struct posix_mq *mq = get(self, 0);
-	mqd_t rv;
+	int rv;
 
 	assert(TYPE(mq->name) == T_STRING && "mq->name is not a string");
 
 	rv = mq_unlink(RSTRING_PTR(mq->name));
-	if (rv == MQD_INVALID)
+	if (rv == -1)
 		rb_sys_fail("mq_unlink");
 
 	return self;
@@ -532,7 +532,7 @@ static VALUE _send(int sflags, int argc, VALUE *argv, VALUE self)
 	struct posix_mq *mq = get(self, 1);
 	struct rw_args x;
 	VALUE buffer, prio, timeout;
-	mqd_t rv;
+	int rv;
 	struct timespec expire;
 
 	rb_scan_args(argc, argv, "12", &buffer, &prio, &timeout);
@@ -543,8 +543,8 @@ static VALUE _send(int sflags, int argc, VALUE *argv, VALUE self)
 	x.msg_prio = NIL_P(prio) ? 0 : NUM2UINT(prio);
 
 retry:
-	rv = (mqd_t)rb_thread_blocking_region(xsend, &x, RUBY_UBF_IO, 0);
-	if (rv == MQD_INVALID) {
+	rv = (int)rb_thread_blocking_region(xsend, &x, RUBY_UBF_IO, 0);
+	if (rv == -1) {
 		if (errno == EINTR)
 			goto retry;
 		if (errno == EAGAIN && (sflags & PMQ_TRY))
@@ -570,7 +570,7 @@ static VALUE send0(VALUE self, VALUE buffer)
 {
 	struct posix_mq *mq = get(self, 1);
 	struct rw_args x;
-	mqd_t rv;
+	int rv;
 
 	setup_send_buffer(&x, buffer);
 	x.des = mq->des;
@@ -578,8 +578,8 @@ static VALUE send0(VALUE self, VALUE buffer)
 	x.msg_prio = 0;
 
 retry:
-	rv = (mqd_t)rb_thread_blocking_region(xsend, &x, RUBY_UBF_IO, 0);
-	if (rv == MQD_INVALID) {
+	rv = (int)rb_thread_blocking_region(xsend, &x, RUBY_UBF_IO, 0);
+	if (rv == -1) {
 		if (errno == EINTR)
 			goto retry;
 		rb_sys_fail("mq_send");
@@ -838,14 +838,14 @@ static void thread_notify_fd(union sigval sv)
 
 static void my_mq_notify(mqd_t des, struct sigevent *not)
 {
-	mqd_t rv = mq_notify(des, not);
+	int rv = mq_notify(des, not);
 
-	if (rv == MQD_INVALID) {
+	if (rv == -1) {
 		if (errno == ENOMEM) {
 			rb_gc();
 			rv = mq_notify(des, not);
 		}
-		if (rv == MQD_INVALID)
+		if (rv == -1)
 			rb_sys_fail("mq_notify");
 	}
 }
