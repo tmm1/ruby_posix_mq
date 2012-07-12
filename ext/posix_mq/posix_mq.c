@@ -850,6 +850,19 @@ static void my_mq_notify(mqd_t des, struct sigevent *not)
 	}
 }
 
+static void lower_stack_size(pthread_attr_t *attr)
+{
+/* some OSes have ridiculously small stack sizes */
+#ifdef PTHREAD_STACK_MIN
+	size_t stack_size = PTHREAD_STACK_MIN;
+	size_t min_size = 4096;
+
+	if (stack_size < min_size)
+		stack_size = min_size;
+	pthread_attr_setstacksize(attr, stack_size);
+#endif
+}
+
 /* :nodoc: */
 static VALUE setnotify_exec(VALUE self, VALUE io, VALUE thr)
 {
@@ -864,10 +877,7 @@ static VALUE setnotify_exec(VALUE self, VALUE io, VALUE thr)
 	errno = pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 	if (errno) rb_sys_fail("pthread_attr_setdetachstate");
 
-#ifdef PTHREAD_STACK_MIN
-	(void)pthread_attr_setstacksize(&attr, PTHREAD_STACK_MIN);
-#endif
-
+	lower_stack_size(&attr);
 	not.sigev_notify = SIGEV_THREAD;
 	not.sigev_notify_function = thread_notify_fd;
 	not.sigev_notify_attributes = &attr;
