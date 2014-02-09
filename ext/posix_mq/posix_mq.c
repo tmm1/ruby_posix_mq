@@ -96,17 +96,28 @@ static void rb_18_str_set_len(VALUE str, long len)
 #endif /* !defined(HAVE_RB_STR_SET_LEN) */
 
 /* partial emulation of the 1.9 rb_thread_blocking_region under 1.8 */
-#ifndef HAVE_RB_THREAD_BLOCKING_REGION
+#if defined(HAVE_RB_THREAD_BLOCKING_REGION) && \
+    defined(HAVE_RB_THREAD_CALL_WITHOUT_GVL)
+/*
+ * Ruby 1.9 - 2.1 (we use deprecated rb_thread_blocking_region in 2.0+
+ * because we can detect (but not use) rb_thread_blocking_region in 1.9.3
+ */
+typedef VALUE(*my_blocking_fn_t)(void*);
+#  define WITHOUT_GVL(fn,a,ubf,b) \
+	rb_thread_blocking_region((my_blocking_fn_t)(fn),(a),(ubf),(b))
+#elif defined(HAVE_RB_THREAD_CALL_WITHOUT_GVL) /* Ruby 2.2+ */
+#include <ruby/thread.h>
+#  define WITHOUT_GVL(fn,a,ubf,b) \
+	rb_thread_call_without_gvl((fn),(a),(ubf),(b))
+#else /* Ruby 1.8 */
 #  include <rubysig.h>
 #  define RUBY_UBF_IO ((rb_unblock_function_t *)-1)
 typedef void rb_unblock_function_t(void *);
-typedef VALUE rb_blocking_function_t(void *);
-static VALUE
-rb_thread_blocking_region(
-	rb_blocking_function_t *func, void *data1,
-	rb_unblock_function_t *ubf, void *data2)
+typedef void * rb_blocking_function_t(void *);
+static void * WITHOUT_GVL(rb_blocking_function_t *func, void *data1,
+			rb_unblock_function_t *ubf, void *data2)
 {
-	VALUE rv;
+	void *rv;
 
 	assert(RUBY_UBF_IO == ubf && "RUBY_UBF_IO required for emulation");
 
@@ -120,6 +131,7 @@ rb_thread_blocking_region(
 
 /* used to pass arguments to mq_open inside blocking region */
 struct open_args {
+	mqd_t des;
 	int argc;
 	const char *name;
 	int oflags;
@@ -130,6 +142,10 @@ struct open_args {
 /* used to pass arguments to mq_send/mq_receive inside blocking region */
 struct rw_args {
 	mqd_t des;
+	union {
+		ssize_t received;
+		int retval;
+	};
 	char *msg_ptr;
 	size_t msg_len;
 	unsigned msg_prio;
@@ -229,43 +245,44 @@ static struct timespec *convert_timeout(struct timespec *dest, VALUE t)
 }
 
 /* (may) run without GVL */
-static VALUE xopen(void *ptr)
+static void * xopen(void *ptr)
 {
 	struct open_args *x = ptr;
-	mqd_t rv;
 
 	switch (x->argc) {
-	case 2: rv = mq_open(x->name, x->oflags); break;
-	case 3: rv = mq_open(x->name, x->oflags, x->mode, NULL); break;
-	case 4: rv = mq_open(x->name, x->oflags, x->mode, &x->attr); break;
-	default: rv = MQD_INVALID;
+	case 2: x->des = mq_open(x->name, x->oflags); break;
+	case 3: x->des = mq_open(x->name, x->oflags, x->mode, NULL); break;
+	case 4: x->des = mq_open(x->name, x->oflags, x->mode, &x->attr); break;
+	default: x->des = MQD_INVALID;
 	}
 
-	return (VALUE)rv;
+	return NULL;
 }
 
 /* runs without GVL */
-static VALUE xsend(void *ptr)
+static void *xsend(void *ptr)
 {
 	struct rw_args *x = ptr;
 
-	if (x->timeout)
-		return (VALUE)mq_timedsend(x->des, x->msg_ptr, x->msg_len,
-		                           x->msg_prio, x->timeout);
+	x->retval = x->timeout ?
+		mq_timedsend(x->des, x->msg_ptr, x->msg_len,
+		             x->msg_prio, x->timeout) :
+		mq_send(x->des, x->msg_ptr, x->msg_len, x->msg_prio);
 
-	return (VALUE)mq_send(x->des, x->msg_ptr, x->msg_len, x->msg_prio);
+	return NULL;
 }
 
 /* runs without GVL */
-static VALUE xrecv(void *ptr)
+static void * xrecv(void *ptr)
 {
 	struct rw_args *x = ptr;
 
-	if (x->timeout)
-		return (VALUE)mq_timedreceive(x->des, x->msg_ptr, x->msg_len,
-		                              &x->msg_prio, x->timeout);
+	x->received = x->timeout ?
+		mq_timedreceive(x->des, x->msg_ptr, x->msg_len,
+		                &x->msg_prio, x->timeout) :
+		mq_receive(x->des, x->msg_ptr, x->msg_len, &x->msg_prio);
 
-	return (VALUE)mq_receive(x->des, x->msg_ptr, x->msg_len, &x->msg_prio);
+	return NULL;
 }
 
 /* called by GC */
@@ -438,7 +455,8 @@ static VALUE init(int argc, VALUE *argv, VALUE self)
 		check_struct_type(attr);
 	}
 
-	mq->des = (mqd_t)xopen(&x);
+	(void)xopen(&x);
+	mq->des = x.des;
 	if (mq->des == MQD_INVALID) {
 		switch (errno) {
 		case ENOMEM:
@@ -446,7 +464,8 @@ static VALUE init(int argc, VALUE *argv, VALUE self)
 		case ENFILE:
 		case ENOSPC:
 			rb_gc();
-			mq->des = (mqd_t)xopen(&x);
+			(void)xopen(&x);
+			mq->des = x.des;
 		}
 		if (mq->des == MQD_INVALID)
 			rb_sys_fail("mq_open");
@@ -532,7 +551,6 @@ static VALUE _send(int sflags, int argc, VALUE *argv, VALUE self)
 	struct posix_mq *mq = get(self, 1);
 	struct rw_args x;
 	VALUE buffer, prio, timeout;
-	int rv;
 	struct timespec expire;
 
 	rb_scan_args(argc, argv, "12", &buffer, &prio, &timeout);
@@ -543,8 +561,8 @@ static VALUE _send(int sflags, int argc, VALUE *argv, VALUE self)
 	x.msg_prio = NIL_P(prio) ? 0 : NUM2UINT(prio);
 
 retry:
-	rv = (int)rb_thread_blocking_region(xsend, &x, RUBY_UBF_IO, 0);
-	if (rv == -1) {
+	WITHOUT_GVL(xsend, &x, RUBY_UBF_IO, 0);
+	if (x.retval == -1) {
 		if (errno == EINTR)
 			goto retry;
 		if (errno == EAGAIN && (sflags & PMQ_TRY))
@@ -570,7 +588,6 @@ static VALUE send0(VALUE self, VALUE buffer)
 {
 	struct posix_mq *mq = get(self, 1);
 	struct rw_args x;
-	int rv;
 
 	setup_send_buffer(&x, buffer);
 	x.des = mq->des;
@@ -578,8 +595,8 @@ static VALUE send0(VALUE self, VALUE buffer)
 	x.msg_prio = 0;
 
 retry:
-	rv = (int)rb_thread_blocking_region(xsend, &x, RUBY_UBF_IO, 0);
-	if (rv == -1) {
+	WITHOUT_GVL(xsend, &x, RUBY_UBF_IO, 0);
+	if (x.retval == -1) {
 		if (errno == EINTR)
 			goto retry;
 		rb_sys_fail("mq_send");
@@ -662,7 +679,6 @@ static VALUE _receive(int rflags, int argc, VALUE *argv, VALUE self)
 	struct posix_mq *mq = get(self, 1);
 	struct rw_args x;
 	VALUE buffer, timeout;
-	ssize_t r;
 	struct timespec expire;
 
 	if (mq->attr.mq_msgsize < 0) {
@@ -686,8 +702,8 @@ static VALUE _receive(int rflags, int argc, VALUE *argv, VALUE self)
 	x.des = mq->des;
 
 retry:
-	r = (ssize_t)rb_thread_blocking_region(xrecv, &x, RUBY_UBF_IO, 0);
-	if (r < 0) {
+	WITHOUT_GVL(xrecv, &x, RUBY_UBF_IO, 0);
+	if (x.received < 0) {
 		if (errno == EINTR)
 			goto retry;
 		if (errno == EAGAIN && (rflags & PMQ_TRY))
@@ -695,7 +711,7 @@ retry:
 		rb_sys_fail("mq_receive");
 	}
 
-	rb_str_set_len(buffer, r);
+	rb_str_set_len(buffer, x.received);
 
 	if (rflags & PMQ_WANTARRAY)
 		return rb_ary_new3(2, buffer, UINT2NUM(x.msg_prio));
