@@ -95,21 +95,18 @@ static void rb_18_str_set_len(VALUE str, long len)
 #define rb_str_set_len rb_18_str_set_len
 #endif /* !defined(HAVE_RB_STR_SET_LEN) */
 
-/* partial emulation of the 1.9 rb_thread_blocking_region under 1.8 */
-#if defined(HAVE_RB_THREAD_BLOCKING_REGION) && \
-    defined(HAVE_RB_THREAD_CALL_WITHOUT_GVL)
-/*
- * Ruby 1.9 - 2.1 (we use deprecated rb_thread_blocking_region in 2.0+
- * because we can detect (but not use) rb_thread_blocking_region in 1.9.3
- */
-typedef VALUE(*my_blocking_fn_t)(void*);
+#if defined(HAVE_RB_THREAD_CALL_WITHOUT_GVL) && defined(HAVE_RUBY_THREAD_H)
+/* Ruby 2.0+ */
+#  include <ruby/thread.h>
+#  define WITHOUT_GVL(fn,a,ubf,b) \
+        rb_thread_call_without_gvl((fn),(a),(ubf),(b))
+#elif defined(HAVE_RB_THREAD_BLOCKING_REGION)
+typedef VALUE (*my_blocking_fn_t)(void*);
 #  define WITHOUT_GVL(fn,a,ubf,b) \
 	rb_thread_blocking_region((my_blocking_fn_t)(fn),(a),(ubf),(b))
-#elif defined(HAVE_RB_THREAD_CALL_WITHOUT_GVL) /* Ruby 2.2+ */
-#include <ruby/thread.h>
-#  define WITHOUT_GVL(fn,a,ubf,b) \
-	rb_thread_call_without_gvl((fn),(a),(ubf),(b))
+
 #else /* Ruby 1.8 */
+/* partial emulation of the 1.9 rb_thread_blocking_region under 1.8 */
 #  include <rubysig.h>
 #  define RUBY_UBF_IO ((rb_unblock_function_t *)-1)
 typedef void rb_unblock_function_t(void *);
