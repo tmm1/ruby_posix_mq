@@ -26,6 +26,7 @@
 
 #if defined(__linux__)
 #  define MQD_TO_FD(mqd) (int)(mqd)
+#  define FD_TO_MQD(fd) (mqd_t)(fd)
 #elif defined(HAVE___MQ_OSHANDLE) /* FreeBSD */
 #  define MQD_TO_FD(mqd) __mq_oshandle(mqd)
 #else
@@ -365,6 +366,35 @@ static void rstruct2mqattr(struct mq_attr *attr, VALUE astruct, int all)
 		attr->mq_curmsgs = NUM2LONG(tmp);
 }
 
+#ifdef FD_TO_MQD
+/*
+ * call-seq:
+ *	POSIX_MQ.for_fd(socket)	=> mq
+ *
+ * Adopts a socket as a POSIX message queue. Argument will be
+ * checked to ensure it is a POSIX message queue socket.
+ *
+ * This is useful for adopting systemd sockets passed via the
+ * ListenMessageQueue directive.
+ * Returns a +POSIX_MQ+ instance.  This method is only available
+ * under Linux and FreeBSD and is not intended to be portable.
+ *
+ */
+static VALUE for_fd(VALUE klass, VALUE socket)
+{
+	VALUE mqv = alloc(klass);
+	struct posix_mq *mq = get(mqv, 0);
+
+	mq->name = Qnil;
+	mq->des = FD_TO_MQD(NUM2INT(socket));
+
+	if (mq_getattr(mq->des, &mq->attr) < 0)
+		rb_sys_fail("provided file descriptor is not a POSIX MQ");
+
+	return mqv;
+}
+#endif /* FD_TO_MQD */
+
 /*
  * call-seq:
  *	POSIX_MQ.new(name [, flags [, mode [, mq_attr]])	=> mq
@@ -506,6 +536,10 @@ static VALUE _unlink(VALUE self)
 {
 	struct posix_mq *mq = get(self, 0);
 	int rv;
+
+	if (NIL_P(mq->name)) {
+		rb_raise(rb_eArgError, "can not unlink an adopted socket");
+	}
 
 	assert(TYPE(mq->name) == T_STRING && "mq->name is not a string");
 
@@ -806,6 +840,15 @@ static VALUE closed(VALUE self)
 static VALUE name(VALUE self)
 {
 	struct posix_mq *mq = get(self, 0);
+
+	if (NIL_P(mq->name)) {
+		/*
+		 * We could use readlink(2) on /proc/self/fd/N, but lots of
+		 * care required.
+		 * http://stackoverflow.com/questions/1188757/
+		 */
+		rb_raise(rb_eArgError, "can not get name of an adopted socket");
+	}
 
 	return rb_str_dup(mq->name);
 }
@@ -1112,6 +1155,10 @@ void Init_posix_mq_ext(void)
 	rb_define_method(cPOSIX_MQ, "nonblock?", nonblock_p, 0);
 #ifdef MQD_TO_FD
 	rb_define_method(cPOSIX_MQ, "to_io", to_io, 0);
+#endif
+
+#ifdef FD_TO_MQD
+	rb_define_module_function(cPOSIX_MQ, "for_fd", for_fd, 1);
 #endif
 
 	id_new = rb_intern("new");

@@ -17,6 +17,8 @@ class Test_POSIX_MQ < Test::Unit::TestCase
     warn "POSIX_MQ#to_io not supported on this platform: #{RUBY_PLATFORM}"
   POSIX_MQ.method_defined?(:notify) or
     warn "POSIX_MQ#notify not supported on this platform: #{RUBY_PLATFORM}"
+  POSIX_MQ.respond_to?(:for_fd) or
+    warn "POSIX_MQ::for_fd not supported on this platform: #{RUBY_PLATFORM}"
 
   def setup
     @mq = nil
@@ -243,6 +245,18 @@ class Test_POSIX_MQ < Test::Unit::TestCase
     assert @mq.to_io.kind_of?(IO)
     assert_nothing_raised { IO.select([@mq], nil, nil, 0) }
   end if POSIX_MQ.method_defined?(:to_io)
+
+  def test_for_fd
+    buf = ""
+    @mq = POSIX_MQ.new @path, IO::CREAT|IO::RDWR, 0666
+    @alt = POSIX_MQ.for_fd(@mq.to_io.to_i)
+    assert_equal true, @mq.send("hello", 0)
+    assert_equal [ "hello", 0 ], @alt.receive(buf)
+    assert_equal "hello", buf
+    assert_equal @mq.to_io.to_i, @alt.to_io.to_i
+    assert_raises(ArgumentError) { @alt.name }
+    assert_raises(Errno::EBADF) { POSIX_MQ.for_fd(1) }
+  end if POSIX_MQ.respond_to?(:for_fd) && POSIX_MQ.method_defined?(:to_io)
 
   def test_notify
     rd, wr = IO.pipe
