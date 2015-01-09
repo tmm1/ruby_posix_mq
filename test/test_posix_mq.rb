@@ -245,6 +245,17 @@ class Test_POSIX_MQ < Test::Unit::TestCase
     assert_equal @mq.to_io.to_i, @alt.to_io.to_i
     assert_raises(ArgumentError) { @alt.name }
     assert_raises(Errno::EBADF) { POSIX_MQ.for_fd(1) }
+    @alt.autoclose = false
+    assert_equal false, @alt.autoclose?
+
+    # iterate a bunch and hope GC kicks in
+    fd = @mq.to_io.fileno
+    10_000.times do
+      mq = POSIX_MQ.for_fd(fd)
+      assert_equal true, mq.autoclose?
+      mq.autoclose = false
+      assert_equal false, mq.autoclose?
+    end
   end if POSIX_MQ.respond_to?(:for_fd) && POSIX_MQ.method_defined?(:to_io)
 
   def test_notify

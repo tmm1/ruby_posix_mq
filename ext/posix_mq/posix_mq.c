@@ -38,6 +38,7 @@
 
 struct posix_mq {
 	mqd_t des;
+	unsigned autoclose:1;
 	struct mq_attr attr;
 	VALUE name;
 	VALUE thread;
@@ -300,7 +301,8 @@ static void _free(void *ptr)
 
 	if (mq->des != MQD_INVALID && MQ_IO_NIL_P(mq)) {
 		/* we ignore errors when gc-ing */
-		mq_close(mq->des);
+		if (mq->autoclose)
+			mq_close(mq->des);
 		errno = 0;
 	}
 	xfree(ptr);
@@ -313,6 +315,7 @@ static VALUE alloc(VALUE klass)
 	VALUE rv = Data_Make_Struct(klass, struct posix_mq, mark, _free, mq);
 
 	mq->des = MQD_INVALID;
+	mq->autoclose = 1;
 	mq->attr.mq_flags = 0;
 	mq->attr.mq_maxmsg = 0;
 	mq->attr.mq_msgsize = -1;
@@ -1066,6 +1069,35 @@ static VALUE setnonblock(VALUE self, VALUE nb)
 
 /*
  * call-seq:
+ *	mq.autoclose = boolean	=> boolean
+ *
+ * Determines whether or not the _mq_ will be closed automatically
+ * at finalization.
+ */
+static VALUE setautoclose(VALUE self, VALUE autoclose)
+{
+	struct posix_mq *mq = get(self, 1);
+
+	mq->autoclose = RTEST(autoclose) ? 1 : 0;
+	return autoclose;
+}
+
+/*
+ * call-seq:
+ *	mq.autoclose?	=> boolean
+ *
+ * Returns whether or not the _mq_ will be closed automatically
+ * at finalization.
+ */
+static VALUE autoclose_p(VALUE self)
+{
+	struct posix_mq *mq = get(self, 1);
+
+	return mq->autoclose ? Qtrue : Qfalse;
+}
+
+/*
+ * call-seq:
  *	mq.trysend(string [,priority[, timeout]]) => +true+ or +false+
  *
  * Exactly like POSIX_MQ#send, except it returns +false+ instead of raising
@@ -1155,6 +1187,8 @@ void Init_posix_mq_ext(void)
 	rb_define_private_method(cPOSIX_MQ, "notify_exec", setnotify_exec, 2);
 	rb_define_private_method(cPOSIX_MQ, "notify_cleanup", notify_cleanup, 0);
 	rb_define_method(cPOSIX_MQ, "nonblock?", nonblock_p, 0);
+	rb_define_method(cPOSIX_MQ, "autoclose?", autoclose_p, 0);
+	rb_define_method(cPOSIX_MQ, "autoclose=", setautoclose, 1);
 #ifdef MQD_TO_FD
 	rb_define_method(cPOSIX_MQ, "to_io", to_io, 0);
 #endif
