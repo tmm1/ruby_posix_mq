@@ -3,11 +3,6 @@ require 'test/unit'
 require 'thread'
 require 'fcntl'
 $stderr.sync = $stdout.sync = true
-require "dl"
-begin
-  require "dl/func"
-rescue LoadError
-end
 $-w = true
 require 'posix_mq'
 
@@ -104,23 +99,15 @@ class Test_POSIX_MQ < Test::Unit::TestCase
     assert elapsed < 1.10, elapsed.inspect
   end
 
-  def test_alarm_signal_safe
-    libc = alarm = nil
-    libcs = %w(libc.so.6 libc.so.0.1 libc.so.7 /usr/lib/libc.sl)
-    libcs.each do |name|
-      libc = DL::Handle.new(name) rescue next
-      if defined?(DL::Function)
-        alarm = libc["alarm"]
-        alarm = DL::CFunc.new(alarm, DL::TYPE_INT, "alarm")
-        alarm = DL::Function.new(alarm, [DL::TYPE_INT])
-      else
-        alarm = libc["alarm", "II"]
+  def test_signal_safe
+    alarm = lambda do |x|
+      Thread.new(x) do |time|
+        sleep(time)
+        Process.kill(:USR1, $$)
       end
-      break
     end
-    alarm or return warn "alarm() not found in #{libcs.inspect}"
     alarms = 0
-    trap("ALRM") do
+    sig = trap(:USR1) do
       alarms += 1
       Thread.new { @mq.send("HI") }
     end
@@ -135,6 +122,8 @@ class Test_POSIX_MQ < Test::Unit::TestCase
     assert elapsed >= interval, elapsed.inspect
     assert elapsed < 1.10, elapsed.inspect
     assert_equal 1, alarms
+  ensure
+    trap(:USR1, sig) if sig
   end
 
   def test_timed_send
