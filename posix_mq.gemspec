@@ -1,8 +1,8 @@
 # -*- encoding: binary -*-
 ENV["VERSION"] or abort "VERSION= must be specified"
 manifest = File.readlines('.manifest').map! { |x| x.chomp! }
-require 'wrongdoc'
-extend Wrongdoc::Gemspec
+require 'olddoc'
+extend Olddoc::Gemspec
 name, summary, title = readme_metadata
 
 Gem::Specification.new do |s|
@@ -16,12 +16,12 @@ Gem::Specification.new do |s|
   s.extensions = %w(ext/posix_mq/extconf.rb)
   s.extra_rdoc_files = extra_rdoc_files(manifest)
   s.files = manifest
-  s.homepage = Wrongdoc.config[:rdoc_url]
+  s.homepage = Olddoc.config['rdoc_url']
   s.summary = summary
   s.rdoc_options = rdoc_options
   s.rubyforge_project = %q{qrp}
   s.test_files = manifest.grep(%r{\Atest/test_.*\.rb\z})
-  s.add_development_dependency(%q<wrongdoc>, "~> 1.5")
+  s.add_development_dependency(%q<olddoc>, "~> 1.0")
 
   # s.licenses = %w(LGPLv3) # accessor not compatible with older RubyGems
 end

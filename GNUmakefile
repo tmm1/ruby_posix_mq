@@ -1,15 +1,8 @@
 all::
+PLACEHOLDERS = posix-mq-rb_1
 RSYNC_DEST := bogomips.org:/srv/bogomips/ruby_posix_mq
-rfproject := qrp
 rfpackage := posix_mq
-man-rdoc: man html
-	for i in $(man1_rdoc); do echo > $$i; done
-doc:: man-rdoc
 include pkg.mk
-ifneq ($(VERSION),)
-release::
-	$(RAKE) publish_news VERSION=$(VERSION)
-endif
 
 base_bins := posix-mq-rb
 bins := $(addprefix bin/, $(base_bins))
