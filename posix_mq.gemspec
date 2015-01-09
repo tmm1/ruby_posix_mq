@@ -11,7 +11,7 @@ Gem::Specification.new do |s|
   s.authors = ["Ruby POSIX MQ hackers"]
   s.date = Time.now.utc.strftime('%Y-%m-%d')
   s.description = readme_description
-  s.email = %q{ruby.posix.mq@librelist.com}
+  s.email = %q{ruby-posix-mq@bogomips.org}
   s.executables = %w(posix-mq-rb)
   s.extensions = %w(ext/posix_mq/extconf.rb)
   s.extra_rdoc_files = extra_rdoc_files(manifest)

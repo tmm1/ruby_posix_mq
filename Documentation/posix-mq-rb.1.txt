@@ -1,5 +1,5 @@
 % posix-mq-rb(1) posix-mq-rb User Manual
-% Ruby POSIX MQ hackers <ruby.posix.mq@librelist.com>
+% Ruby POSIX MQ hackers <ruby-posix-mq@bogomips.org>
 % Jan 1, 2010
 
 # NAME

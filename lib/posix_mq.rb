@@ -41,7 +41,7 @@ class POSIX_MQ
   # SIGEV_THREAD functionality in mq_notify(3).  So far we only
   # know of glibc + Linux supporting this.  Please let us
   # know if your platform can support this functionality and
-  # are willing to test for us <ruby.posix.mq@librelist.com>
+  # are willing to test for us <ruby-posix-mq@bogomips.org>
   #
   # As far as we can tell, this method is not very useful
   # nor efficient.  You would be better served using signals or
