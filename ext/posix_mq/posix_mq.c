@@ -141,13 +141,13 @@ struct open_args {
 /* used to pass arguments to mq_send/mq_receive inside blocking region */
 struct rw_args {
 	mqd_t des;
+	unsigned msg_prio;
 	union {
 		ssize_t received;
 		int retval;
 	};
 	char *msg_ptr;
 	size_t msg_len;
-	unsigned msg_prio;
 	struct timespec *timeout;
 };
 
