@@ -384,13 +384,15 @@ static VALUE for_fd(VALUE klass, VALUE socket)
 {
 	VALUE mqv = alloc(klass);
 	struct posix_mq *mq = get(mqv, 0);
+	mqd_t mqd;
 
 	mq->name = Qnil;
-	mq->des = FD_TO_MQD(NUM2INT(socket));
+	mqd = FD_TO_MQD(NUM2INT(socket));
 
-	if (mq_getattr(mq->des, &mq->attr) < 0)
+	if (mq_getattr(mqd, &mq->attr) < 0)
 		rb_sys_fail("provided file descriptor is not a POSIX MQ");
 
+	mq->des = mqd;
 	return mqv;
 }
 #endif /* FD_TO_MQD */
