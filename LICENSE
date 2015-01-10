@@ -3,13 +3,11 @@ revision control for names and email addresses of all of them.
 
 You can redistribute it and/or modify it either under the terms of the GNU
 Lesser General Public License as published by the Free Software Foundation,
-version 3.0 {LGPLv3}[http://www.gnu.org/licenses/lgpl-3.0.txt] (see
-link:COPYING) or version 2 of the GNU General Public License
-{GPLv2}[http://www.gnu.org/licenses/gpl-2.0.txt] (see link:COPYING-GPL2).
+version 3.0 or later {LGPLv3+}[https://www.gnu.org/licenses/lgpl-3.0.txt]
+(see link:COPYING).
 
-The project leader {Eric Wong}[mailto:normalperson@yhbt.net] reserves
-the right to upgrade the project license to future versions of the LGPL
-(but no other licenses).
+It is also available under the GNU General Public License
+{GPLv2}[https://www.gnu.org/licenses/gpl-2.0.txt] (see link:COPYING-GPL2).
 
 Ruby posix_mq is distributed in the hope that it will be useful, but
 WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -17,5 +15,5 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser
 General Public License for more details.
 
 You should have received a copy of the GNU Lesser General Public License
-along with Ruby posix_mq; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301
+along with Ruby posix_mq; if not, see:
+https://www.gnu.org/licenses/lgpl-3.0.txt

@@ -9,7 +9,6 @@ Gem::Specification.new do |s|
   s.name = %q{posix_mq}
   s.version = ENV["VERSION"].dup
   s.authors = ["Ruby POSIX MQ hackers"]
-  s.date = Time.now.utc.strftime('%Y-%m-%d')
   s.description = readme_description
   s.email = %q{ruby-posix-mq@bogomips.org}
   s.executables = %w(posix-mq-rb)
@@ -19,9 +18,8 @@ Gem::Specification.new do |s|
   s.homepage = Olddoc.config['rdoc_url']
   s.summary = summary
   s.rdoc_options = rdoc_options
-  s.rubyforge_project = %q{qrp}
   s.test_files = manifest.grep(%r{\Atest/test_.*\.rb\z})
   s.add_development_dependency(%q<olddoc>, "~> 1.0")
 
-  # s.licenses = %w(LGPLv3) # accessor not compatible with older RubyGems
+  s.licenses = %w(GPLv2 LGPLv3+)
 end
