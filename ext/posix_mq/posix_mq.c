@@ -521,7 +521,7 @@ static VALUE s_unlink(VALUE self, VALUE name)
 {
 	int rv = mq_unlink(StringValueCStr(name));
 
-	if (rv == -1)
+	if (rv < 0)
 		rb_sys_fail("mq_unlink");
 
 	return INT2NUM(1);
@@ -549,7 +549,7 @@ static VALUE _unlink(VALUE self)
 	assert(TYPE(mq->name) == T_STRING && "mq->name is not a string");
 
 	rv = mq_unlink(RSTRING_PTR(mq->name));
-	if (rv == -1)
+	if (rv < 0)
 		rb_sys_fail("mq_unlink");
 
 	return self;
@@ -598,7 +598,7 @@ static VALUE _send(int sflags, int argc, VALUE *argv, VALUE self)
 
 retry:
 	WITHOUT_GVL(xsend, &x, RUBY_UBF_IO, 0);
-	if (x.retval == -1) {
+	if (x.retval < 0) {
 		if (errno == EINTR)
 			goto retry;
 		if (errno == EAGAIN && (sflags & PMQ_TRY))
@@ -632,7 +632,7 @@ static VALUE send0(VALUE self, VALUE buffer)
 
 retry:
 	WITHOUT_GVL(xsend, &x, RUBY_UBF_IO, 0);
-	if (x.retval == -1) {
+	if (x.retval < 0) {
 		if (errno == EINTR)
 			goto retry;
 		rb_sys_fail("mq_send");
@@ -814,7 +814,7 @@ static VALUE _close(VALUE self)
 	struct posix_mq *mq = get(self, 1);
 
 	if (! MQ_IO_CLOSE(mq)) {
-		if (mq_close(mq->des) == -1)
+		if (mq_close(mq->des) < 0)
 			rb_sys_fail("mq_close");
 	}
 	mq->des = MQD_INVALID;
@@ -901,12 +901,12 @@ static void my_mq_notify(mqd_t des, struct sigevent *not)
 {
 	int rv = mq_notify(des, not);
 
-	if (rv == -1) {
+	if (rv < 0) {
 		if (errno == ENOMEM) {
 			rb_gc();
 			rv = mq_notify(des, not);
 		}
-		if (rv == -1)
+		if (rv < 0)
 			rb_sys_fail("mq_notify");
 	}
 }
