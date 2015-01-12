@@ -34,6 +34,7 @@
 #  define MQ_IO_SET(mq,val) ((void)(0))
 #  define MQ_IO_CLOSE(mq) ((int)(0))
 #  define MQ_IO_NIL_P(mq) ((int)(1))
+#  define MQ_IO_SET_AUTOCLOSE(mq, boolean) for(;0;)
 #endif
 
 struct posix_mq {
@@ -48,9 +49,17 @@ struct posix_mq {
 };
 
 #ifdef MQD_TO_FD
+static ID id_setautoclose;
 #  define MQ_IO_MARK(mq) rb_gc_mark((mq)->io)
 #  define MQ_IO_SET(mq,val) do { (mq)->io = (val); } while (0)
 #  define MQ_IO_NIL_P(mq) NIL_P((mq)->io)
+
+static void MQ_IO_SET_AUTOCLOSE(struct posix_mq *mq, VALUE boolean)
+{
+	if (!NIL_P(mq->io))
+		rb_funcall(mq->io, id_setautoclose, 1, boolean);
+}
+
 static int MQ_IO_CLOSE(struct posix_mq *mq)
 {
 	if (NIL_P(mq->io))
@@ -654,8 +663,12 @@ static VALUE to_io(VALUE self)
 	struct posix_mq *mq = get(self, 1);
 	int fd = MQD_TO_FD(mq->des);
 
-	if (NIL_P(mq->io))
+	if (NIL_P(mq->io)) {
 		mq->io = rb_funcall(rb_cIO, id_new, 1, INT2NUM(fd));
+
+		if (!mq->autoclose)
+			rb_funcall(mq->io, id_setautoclose, 1, Qfalse);
+	}
 
 	return mq->io;
 }
@@ -1078,6 +1091,7 @@ static VALUE setautoclose(VALUE self, VALUE autoclose)
 {
 	struct posix_mq *mq = get(self, 1);
 
+	MQ_IO_SET_AUTOCLOSE(mq, autoclose);
 	mq->autoclose = RTEST(autoclose) ? 1 : 0;
 	return autoclose;
 }
@@ -1195,6 +1209,7 @@ void Init_posix_mq_ext(void)
 
 #ifdef FD_TO_MQD
 	rb_define_module_function(cPOSIX_MQ, "for_fd", for_fd, 1);
+	id_setautoclose = rb_intern("autoclose=");
 #endif
 
 	id_new = rb_intern("new");

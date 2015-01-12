@@ -258,6 +258,14 @@ class Test_POSIX_MQ < Test::Unit::TestCase
     end
   end if POSIX_MQ.respond_to?(:for_fd) && POSIX_MQ.method_defined?(:to_io)
 
+  def test_autoclose_propagates_to_io
+    @mq = POSIX_MQ.new @path, IO::CREAT|IO::RDWR, 0666
+    @mq.autoclose = false
+    assert_equal false, @mq.to_io.autoclose?
+    @mq.autoclose = true
+    assert_equal true, @mq.to_io.autoclose?
+  end if POSIX_MQ.method_defined?(:to_io)
+
   def test_notify
     rd, wr = IO.pipe
     orig = trap(:USR1) { wr.syswrite('.') }
