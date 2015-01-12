@@ -23,10 +23,10 @@ network-aware message queue implementations.
 
 * Optional timeouts may be applied to send and receive operations.
 
-* Thread-safe blocking operations under Ruby 1.9, releases GVL
+* Thread-safe blocking operations under Ruby 1.9+, releases GVL
   before blocking operations.
 
-* Works under Ruby 1.8, Ruby 1.9 and Rubinius 1.2
+* Works under Ruby 1.9 and later.
 
 * Documented library API
 
@@ -155,4 +155,4 @@ subscription instructions:
     # You may wish to sync in your cronjob
     ssoma sync --cron
 
-* http://bogomips.org/ruby-posix-mq/
+* Mailing list archives: http://bogomips.org/ruby-posix-mq/
