@@ -19,6 +19,5 @@ Gem::Specification.new do |s|
   s.summary = summary
   s.test_files = manifest.grep(%r{\Atest/test_.*\.rb\z})
   s.add_development_dependency(%q<olddoc>, "~> 1.0")
-
-  s.licenses = %w(GPLv2 LGPLv3+)
+  s.licenses = %w(GPL-2.0 LGPL-3.0+)
 end
