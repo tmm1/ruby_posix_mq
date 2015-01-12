@@ -17,7 +17,6 @@ Gem::Specification.new do |s|
   s.files = manifest
   s.homepage = Olddoc.config['rdoc_url']
   s.summary = summary
-  s.rdoc_options = rdoc_options
   s.test_files = manifest.grep(%r{\Atest/test_.*\.rb\z})
   s.add_development_dependency(%q<olddoc>, "~> 1.0")
 
