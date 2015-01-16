@@ -2,7 +2,6 @@ all::
 PLACEHOLDERS = posix-mq-rb_1
 RSYNC_DEST := bogomips.org:/srv/bogomips/ruby_posix_mq
 rfpackage := posix_mq
-include pkg.mk
 
 base_bins := posix-mq-rb
 bins := $(addprefix bin/, $(base_bins))
@@ -17,8 +16,9 @@ man html:
 	$(MAKE) -C Documentation install-$@
 
 pkg_extra += $(man1_paths)
+$(man1_paths): man
+include pkg.mk
 
 doc::
 	install -m644 COPYING-GPL2 doc/COPYING-GPL2
-	$(RM) $(man1_rdoc)
 .PHONY: man html
