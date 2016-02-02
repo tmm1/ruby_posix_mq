@@ -1,4 +1,5 @@
 # -*- encoding: binary -*-
+# frozen_string_literal: true
 require 'test/unit'
 require 'thread'
 require 'fcntl'
@@ -68,7 +69,7 @@ class Test_POSIX_MQ < Test::Unit::TestCase
     @mq = POSIX_MQ.new(@path, :rw)
     assert ! @mq.nonblock?
     t0 = Time.now
-    maybe_timeout { @mq.receive "", interval } or return
+    maybe_timeout { @mq.receive nil, interval } or return
     elapsed = Time.now - t0
     assert_operator elapsed, :>, interval, elapsed.inspect
     assert_operator elapsed, :<, 0.04, elapsed.inspect
@@ -82,7 +83,7 @@ class Test_POSIX_MQ < Test::Unit::TestCase
     @mq = POSIX_MQ.new(@path, :rw)
     assert ! @mq.nonblock?
     t0 = Time.now
-    maybe_timeout { @mq.receive "", interval } or return
+    maybe_timeout { @mq.receive nil, interval } or return
     elapsed = Time.now - t0
     assert_operator elapsed, :>=, 0.01, elapsed.inspect
     assert_operator elapsed, :<=, 0.04, elapsed.inspect
@@ -93,7 +94,7 @@ class Test_POSIX_MQ < Test::Unit::TestCase
     @mq = POSIX_MQ.new(@path, :rw)
     assert ! @mq.nonblock?
     t0 = Time.now
-    maybe_timeout { @mq.receive "", interval } or return
+    maybe_timeout { @mq.receive nil, interval } or return
     elapsed = Time.now - t0
     assert elapsed >= interval, elapsed.inspect
     assert elapsed < 1.10, elapsed.inspect
@@ -159,7 +160,7 @@ class Test_POSIX_MQ < Test::Unit::TestCase
   end
 
   def test_name
-    path = "" << @path.dup
+    path = @path.dup
     path.freeze
     @mq = POSIX_MQ.new @path, IO::CREAT|IO::WRONLY, 0666
     assert_equal path, @mq.name
@@ -192,7 +193,7 @@ class Test_POSIX_MQ < Test::Unit::TestCase
   end
 
   def test_shift_buf
-    buf = ""
+    buf = "".dup
     @mq = POSIX_MQ.new @path, IO::CREAT|IO::RDWR, 0666
     @mq << "hello"
     assert_equal "hello", @mq.shift(buf)
@@ -206,7 +207,7 @@ class Test_POSIX_MQ < Test::Unit::TestCase
   end
 
   def test_send_receive_buf
-    buf = ""
+    buf = "".dup
     @mq = POSIX_MQ.new @path, IO::CREAT|IO::RDWR, 0666
     assert_equal true, @mq.send("hello", 0)
     assert_equal [ "hello", 0 ], @mq.receive(buf)
@@ -236,7 +237,7 @@ class Test_POSIX_MQ < Test::Unit::TestCase
   end if POSIX_MQ.method_defined?(:to_io)
 
   def test_for_fd
-    buf = ""
+    buf = "".dup
     @mq = POSIX_MQ.new @path, IO::CREAT|IO::RDWR, 0666
     @alt = POSIX_MQ.for_fd(@mq.to_io.to_i)
     assert_equal true, @mq.send("hello", 0)

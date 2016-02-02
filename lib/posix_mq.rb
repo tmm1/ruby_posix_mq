@@ -1,4 +1,4 @@
-# -*- encoding: binary -*-
+# -*- frozen_string_literal: true -*-
 #
 # This class represents an POSIX message queue descriptor (mqd_t)
 # object.  It matches the C API for POSIX messages queues closely.
@@ -79,7 +79,6 @@ class POSIX_MQ
   # All send/receive operations are atomic and only one
   # native thread may be notified at a time
   alias clone dup
-
 end
 
 require 'posix_mq_ext'
