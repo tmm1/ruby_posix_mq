@@ -14,4 +14,15 @@ have_library("pthread")
 have_func("__mq_oshandle")
 have_func("mq_timedsend")
 have_func("mq_timedreceive")
+
+r, w = IO.pipe
+r.close
+w.close
+begin
+  r.close
+  $CPPFLAGS += ' -DIDEMPOTENT_IO_CLOSE=1'
+rescue IOError
+  $CPPFLAGS += ' -DIDEMPOTENT_IO_CLOSE=0'
+end
+
 create_makefile("posix_mq_ext")

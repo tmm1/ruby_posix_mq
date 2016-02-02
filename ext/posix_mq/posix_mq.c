@@ -824,7 +824,15 @@ static VALUE setattr(VALUE self, VALUE astruct)
  */
 static VALUE _close(VALUE self)
 {
-	struct posix_mq *mq = get(self, 1);
+	struct posix_mq *mq;
+
+	if (IDEMPOTENT_IO_CLOSE) { /* defined in extconf.rb */
+		mq = get(self, 0);
+		if (!mq || (mq->des == MQD_INVALID))
+			return Qnil;
+	} else {
+		mq = get(self, 1);
+	}
 
 	if (! MQ_IO_CLOSE(mq)) {
 		if (mq_close(mq->des) < 0)

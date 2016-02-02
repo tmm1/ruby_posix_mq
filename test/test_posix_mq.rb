@@ -152,7 +152,21 @@ class Test_POSIX_MQ < Test::Unit::TestCase
       assert_equal true, mq.send("HI", 0)
       assert_equal 1, mq.attr.curmsgs
       assert_nil mq.close
-      assert_raises(IOError) { mq.close }
+
+      r, w = IO.pipe
+      w.close
+      r.close
+      idempotent_close = begin
+        r.close
+        true
+      rescue IOError
+        false
+      end
+      if idempotent_close
+        2.times { assert_nil mq.close }
+      else
+        assert_raises(IOError) { mq.close }
+      end
     end
     assert @mq.closed?
     @mq = nil
