@@ -1213,11 +1213,11 @@ void Init_posix_mq_ext(void)
 	rb_define_method(cPOSIX_MQ, "autoclose=", setautoclose, 1);
 #ifdef MQD_TO_FD
 	rb_define_method(cPOSIX_MQ, "to_io", to_io, 0);
+	id_setautoclose = rb_intern("autoclose=");
 #endif
 
 #ifdef FD_TO_MQD
 	rb_define_module_function(cPOSIX_MQ, "for_fd", for_fd, 1);
-	id_setautoclose = rb_intern("autoclose=");
 #endif
 
 	id_new = rb_intern("new");
