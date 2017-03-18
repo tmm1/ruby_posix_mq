@@ -303,9 +303,10 @@ class Test_POSIX_MQ < Test::Unit::TestCase
       begin
         @mq.notify = :USR1
       rescue Errno::EBUSY
-        exit 0
+        exit!(0)
       rescue => e
-        p e
+        exit!(0) if Errno::EBADF === e && RUBY_PLATFORM =~ /freebsd/
+        warn "#{e.message} (#{e.class})\n"
       end
       exit! 1
     end
@@ -326,14 +327,28 @@ class Test_POSIX_MQ < Test::Unit::TestCase
   end
 
   def test_setattr_fork
+    return if RUBY_PLATFORM !~ /freebsd/
     @mq = POSIX_MQ.new @path, IO::CREAT|IO::WRONLY, 0666
     mq_attr = POSIX_MQ::Attr.new(IO::NONBLOCK)
     @mq.attr = mq_attr
     assert @mq.nonblock?
 
-    pid = fork { @mq.nonblock = false }
-    assert Process.waitpid2(pid)[1].success?
-    assert ! @mq.nonblock?
+    pid = fork do
+      begin
+        @mq.nonblock = false
+      rescue => e
+        exit!(2) if Errno::EBADF === e && RUBY_PLATFORM =~ /freebsd/
+        warn "#{e.message} (#{e.class})\n"
+        exit!(1)
+      end
+      exit!(0)
+    end
+    _, status = Process.waitpid2(pid)
+    if status.success?
+      assert ! @mq.nonblock?
+    else
+      assert_equal 2, status.exitstatus
+    end
   end
 
   def test_new_nonblocking
