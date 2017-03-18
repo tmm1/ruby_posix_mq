@@ -317,11 +317,22 @@ static void _free(void *ptr)
 	xfree(ptr);
 }
 
+static size_t memsize(const void *ptr)
+{
+	return sizeof(struct posix_mq);
+}
+
+static const rb_data_type_t mqtype = {
+	"posix_mq",
+	{ mark, _free, memsize, /* reserved */ },
+	/* parent, data, [ flags ] */
+};
+
 /* automatically called at creation (before initialize) */
 static VALUE alloc(VALUE klass)
 {
 	struct posix_mq *mq;
-	VALUE rv = Data_Make_Struct(klass, struct posix_mq, mark, _free, mq);
+	VALUE rv = TypedData_Make_Struct(klass, struct posix_mq, &mqtype, mq);
 
 	mq->des = MQD_INVALID;
 	mq->autoclose = 1;
@@ -341,7 +352,7 @@ static struct posix_mq *get(VALUE self, int need_valid)
 {
 	struct posix_mq *mq;
 
-	Data_Get_Struct(self, struct posix_mq, mq);
+	TypedData_Get_Struct(self, struct posix_mq, &mqtype, mq);
 
 	if (need_valid && mq->des == MQD_INVALID)
 		rb_raise(rb_eIOError, "closed queue descriptor");
