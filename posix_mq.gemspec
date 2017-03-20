@@ -1,5 +1,5 @@
 # -*- encoding: binary -*-
-ENV["VERSION"] ||= '2.3.0'
+ENV["VERSION"] ||= '2.4.0'
 if File.exist?('.manifest')
   manifest = IO.readlines('.manifest').map!(&:chomp!)
 else
