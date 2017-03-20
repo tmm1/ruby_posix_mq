@@ -1,4 +1,4 @@
-= posix_mq - POSIX Message Queues for Ruby
+= posix_mq - POSIX message queues for Ruby
 
 POSIX message queues allow local processes to exchange data in the form
 of messages.  This API is distinct from that provided by System V

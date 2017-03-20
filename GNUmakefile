@@ -17,8 +17,8 @@ man html:
 
 pkg_extra += $(man1_paths)
 $(man1_paths): man
-include pkg.mk
 
-doc::
+doc:: html
 	install -m644 COPYING-GPL2 doc/COPYING-GPL2
+include pkg.mk
 .PHONY: man html
