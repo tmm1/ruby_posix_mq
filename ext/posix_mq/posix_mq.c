@@ -523,7 +523,7 @@ static VALUE init(int argc, VALUE *argv, VALUE self)
 			rb_sys_fail("mq_open");
 	}
 
-	mq->name = rb_str_dup(name);
+	mq->name = rb_str_new_frozen(name);
 	if (x.oflags & O_NONBLOCK)
 		mq->attr.mq_flags = O_NONBLOCK;
 
@@ -887,6 +887,7 @@ static VALUE name(VALUE self)
 		rb_raise(rb_eArgError, "can not get name of an adopted socket");
 	}
 
+	/* XXX compatibility: in retrospect, we could return a frozen string */
 	return rb_str_dup(mq->name);
 }
 
@@ -907,6 +908,7 @@ static int lookup_sig(VALUE sig)
 		VALUE mSignal = rb_const_get(rb_cObject, rb_intern("Signal"));
 
 		list = rb_funcall(mSignal, rb_intern("list"), 0, 0);
+		rb_obj_freeze(list);
 		rb_global_variable(&list);
 	}
 
