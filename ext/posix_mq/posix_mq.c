@@ -907,7 +907,7 @@ static int lookup_sig(VALUE sig)
 	if (!list) {
 		VALUE mSignal = rb_const_get(rb_cObject, rb_intern("Signal"));
 
-		list = rb_funcall(mSignal, rb_intern("list"), 0, 0);
+		list = rb_funcall(mSignal, rb_intern("list"), 0);
 		rb_obj_freeze(list);
 		rb_global_variable(&list);
 	}
@@ -961,7 +961,7 @@ static void lower_stack_size(pthread_attr_t *attr)
 /* :nodoc: */
 static VALUE setnotify_exec(VALUE self, VALUE io, VALUE thr)
 {
-	int fd = NUM2INT(rb_funcall(io, id_fileno, 0, 0));
+	int fd = NUM2INT(rb_funcall(io, id_fileno, 0));
 	struct posix_mq *mq = get(self, 1);
 	struct sigevent not;
 	pthread_attr_t attr;
@@ -979,7 +979,7 @@ static VALUE setnotify_exec(VALUE self, VALUE io, VALUE thr)
 	not.sigev_value.sival_int = fd;
 
 	if (!NIL_P(mq->thread))
-		rb_funcall(mq->thread, id_kill, 0, 0);
+		rb_funcall(mq->thread, id_kill, 0);
 	mq->thread = thr;
 
 	my_mq_notify(mq->des, &not);
@@ -993,7 +993,7 @@ static VALUE notify_cleanup(VALUE self)
 	struct posix_mq *mq = get(self, 1);
 
 	if (!NIL_P(mq->thread)) {
-		rb_funcall(mq->thread, id_kill, 0, 0);
+		rb_funcall(mq->thread, id_kill, 0);
 		mq->thread = Qnil;
 	}
 	return Qnil;
